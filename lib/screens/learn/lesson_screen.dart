@@ -38,6 +38,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   }
 
   void _completLesson() {
+    // AsyncNotifier — fire-and-forget, UI는 다이얼로그로 즉시 처리
     ref.read(learnProvider.notifier).completeLesson(50);
     showDialog(
       context: context,

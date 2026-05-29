@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/user_stats.dart';
 import '../../providers/learn_provider.dart';
 import '../../widgets/streak_badge.dart';
 import 'lesson_screen.dart';
@@ -11,7 +12,8 @@ class LearnScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(learnProvider);
+    final statsAsync = ref.watch(learnProvider);
+    final stats = statsAsync.valueOrNull ?? const UserStats();
 
     return Scaffold(
       appBar: AppBar(
@@ -19,7 +21,14 @@ class LearnScreen extends ConsumerWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: StreakBadge(streak: stats.streak),
+            child: statsAsync.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : StreakBadge(streak: stats.streak),
           ),
         ],
       ),
