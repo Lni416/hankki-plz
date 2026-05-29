@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 사용자 데이터 ────────────────────────────────────────────────────
+    // 본인만 읽기·쓰기 가능
+    match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // 냉장고 재료 — 본인만 CRUD
+      match /ingredients/{ingredientId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // 추천 이력 — 본인 읽기, Cloud Functions만 쓰기
+      match /recommendedRecipes/{recipeId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false; // Cloud Functions(Admin SDK)만 허용
+      }
+    }
+
+    // ── 레시피 DB ─────────────────────────────────────────────────────────
+    // 인증된 사용자 누구나 읽기, 쓰기는 Cloud Functions(Admin SDK)만
+    match /recipes/{recipeId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+
+      // 학습 카드 — 동일
+      match /lessonCards/{cardId} {
+        allow read: if request.auth != null;
+        allow write: if false;
+      }
+    }
+  }
+}

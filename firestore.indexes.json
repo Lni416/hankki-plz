@@ -1,0 +1,33 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "ingredients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "addedAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ingredients",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "expiryDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "recommendedRecipes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "recommendedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "lessonCards",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "order", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
