@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum CardType { intro, technique, quiz, tip }
 
 class QuizOption {
@@ -34,5 +36,27 @@ class LearnCard {
       case CardType.tip:
         return '요린이 팁';
     }
+  }
+
+  factory LearnCard.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return LearnCard(
+      id: doc.id,
+      type: CardType.values.firstWhere(
+        (t) => t.name == (data['type'] as String? ?? 'intro'),
+        orElse: () => CardType.intro,
+      ),
+      title: data['title'] as String,
+      content: data['content'] as String,
+      emoji: data['emoji'] as String? ?? '🍳',
+      quizOptions: data['quizOptions'] != null
+          ? (data['quizOptions'] as List<dynamic>)
+              .map((e) => QuizOption(
+                    text: e['text'] as String,
+                    isCorrect: e['isCorrect'] as bool,
+                  ))
+              .toList()
+          : null,
+    );
   }
 }

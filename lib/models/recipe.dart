@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class RecipeIngredient {
   final String name;
   final double amount;
@@ -10,6 +12,20 @@ class RecipeIngredient {
     required this.unit,
     this.isOptional = false,
   });
+
+  factory RecipeIngredient.fromMap(Map<String, dynamic> map) => RecipeIngredient(
+        name: map['name'] as String,
+        amount: (map['amount'] as num).toDouble(),
+        unit: map['unit'] as String,
+        isOptional: map['isOptional'] as bool? ?? false,
+      );
+
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'amount': amount,
+        'unit': unit,
+        'isOptional': isOptional,
+      };
 }
 
 class RecipeStep {
@@ -24,6 +40,22 @@ class RecipeStep {
     this.tip,
     this.duration,
   });
+
+  factory RecipeStep.fromMap(Map<String, dynamic> map) => RecipeStep(
+        order: (map['order'] as num).toInt(),
+        description: map['description'] as String,
+        tip: map['tip'] as String?,
+        duration: map['durationMinutes'] != null
+            ? Duration(minutes: (map['durationMinutes'] as num).toInt())
+            : null,
+      );
+
+  Map<String, dynamic> toMap() => {
+        'order': order,
+        'description': description,
+        if (tip != null) 'tip': tip,
+        if (duration != null) 'durationMinutes': duration!.inMinutes,
+      };
 }
 
 class Nutrition {
@@ -38,6 +70,20 @@ class Nutrition {
     required this.protein,
     required this.fat,
   });
+
+  factory Nutrition.fromMap(Map<String, dynamic> map) => Nutrition(
+        calories: (map['calories'] as num).toInt(),
+        carbs: (map['carbs'] as num).toDouble(),
+        protein: (map['protein'] as num).toDouble(),
+        fat: (map['fat'] as num).toDouble(),
+      );
+
+  Map<String, dynamic> toMap() => {
+        'calories': calories,
+        'carbs': carbs,
+        'protein': protein,
+        'fat': fat,
+      };
 }
 
 class Recipe {
@@ -53,12 +99,13 @@ class Recipe {
   final List<String> tags;
   final String emoji;
   final String category;
+  final String? thumbnailUrl;
 
-  // 보유 재료 기반 계산
-  double matchRate;
-  bool hasUrgentIngredient;
+  // 보유 재료 기반 계산값 — 불변 필드, copyWith으로만 생성
+  final double matchRate;
+  final bool hasUrgentIngredient;
 
-  Recipe({
+  const Recipe({
     required this.id,
     required this.title,
     required this.description,
@@ -71,9 +118,33 @@ class Recipe {
     required this.tags,
     required this.emoji,
     required this.category,
+    this.thumbnailUrl,
     this.matchRate = 0.0,
     this.hasUrgentIngredient = false,
   });
+
+  Recipe copyWith({
+    double? matchRate,
+    bool? hasUrgentIngredient,
+    String? thumbnailUrl,
+  }) =>
+      Recipe(
+        id: id,
+        title: title,
+        description: description,
+        difficulty: difficulty,
+        cookingTimeMinutes: cookingTimeMinutes,
+        servings: servings,
+        ingredients: ingredients,
+        steps: steps,
+        nutrition: nutrition,
+        tags: tags,
+        emoji: emoji,
+        category: category,
+        thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+        matchRate: matchRate ?? this.matchRate,
+        hasUrgentIngredient: hasUrgentIngredient ?? this.hasUrgentIngredient,
+      );
 
   String get difficultyLabel {
     switch (difficulty) {
@@ -91,4 +162,45 @@ class Recipe {
         return '보통';
     }
   }
+
+  factory Recipe.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Recipe(
+      id: doc.id,
+      title: data['title'] as String,
+      description: data['description'] as String? ?? '',
+      difficulty: (data['difficulty'] as num?)?.toInt() ?? 2,
+      cookingTimeMinutes:
+          (data['cookingTimeMinutes'] as num?)?.toInt() ?? 20,
+      servings: (data['servings'] as num?)?.toInt() ?? 2,
+      ingredients: (data['ingredients'] as List<dynamic>? ?? [])
+          .map((e) => RecipeIngredient.fromMap(e as Map<String, dynamic>))
+          .toList(),
+      steps: (data['steps'] as List<dynamic>? ?? [])
+          .map((e) => RecipeStep.fromMap(e as Map<String, dynamic>))
+          .toList(),
+      nutrition: data['nutrition'] != null
+          ? Nutrition.fromMap(data['nutrition'] as Map<String, dynamic>)
+          : const Nutrition(calories: 400, carbs: 50, protein: 20, fat: 15),
+      tags: List<String>.from(data['tags'] as List? ?? []),
+      emoji: data['emoji'] as String? ?? '🍽️',
+      category: data['category'] as String? ?? '기타',
+      thumbnailUrl: data['thumbnailUrl'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'title': title,
+        'description': description,
+        'difficulty': difficulty,
+        'cookingTimeMinutes': cookingTimeMinutes,
+        'servings': servings,
+        'ingredients': ingredients.map((i) => i.toMap()).toList(),
+        'steps': steps.map((s) => s.toMap()).toList(),
+        'nutrition': nutrition.toMap(),
+        'tags': tags,
+        'emoji': emoji,
+        'category': category,
+        if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
+      };
 }

@@ -1,40 +1,62 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/ingredient.dart';
 import '../models/mock_data.dart';
+import '../services/firestore_service.dart';
+import 'auth_provider.dart';
 
-class FridgeNotifier extends StateNotifier<List<Ingredient>> {
-  FridgeNotifier() : super(mockIngredients);
+class FridgeNotifier extends StreamNotifier<List<Ingredient>> {
+  @override
+  Stream<List<Ingredient>> build() {
+    final firebaseAvailable = ref.read(firebaseAvailableProvider);
+    if (!firebaseAvailable) {
+      return Stream.value(mockIngredients);
+    }
 
-  void addIngredient(Ingredient ingredient) {
-    state = [...state, ingredient];
+    final uid = ref.watch(authStateProvider).value?.uid;
+    if (uid == null) {
+      return Stream.value([]);
+    }
+    return FirestoreService.streamIngredients(uid);
   }
 
-  void removeIngredient(String id) {
-    state = state.where((i) => i.id != id).toList();
+  Future<void> addIngredient(Ingredient ingredient) async {
+    final uid = ref.read(authStateProvider).value?.uid;
+    if (uid == null || !ref.read(firebaseAvailableProvider)) {
+      // 오프라인/비인증 시 낙관적 업데이트
+      state = AsyncData([...state.valueOrNull ?? [], ingredient]);
+      return;
+    }
+    await FirestoreService.addIngredient(uid, ingredient);
+    // Firestore 스트림이 자동으로 상태를 갱신함
   }
 
-  void updateQuantity(String id, double quantity) {
-    state = state.map((i) {
-      if (i.id == id) return i.copyWith(quantity: quantity);
-      return i;
-    }).toList();
+  Future<void> removeIngredient(String id) async {
+    final uid = ref.read(authStateProvider).value?.uid;
+    if (uid == null || !ref.read(firebaseAvailableProvider)) {
+      state = AsyncData(
+          (state.valueOrNull ?? []).where((i) => i.id != id).toList());
+      return;
+    }
+    await FirestoreService.removeIngredient(uid, id);
   }
 
-  List<Ingredient> get urgentIngredients =>
-      state.where((i) => i.isUrgent && !i.isExpired).toList();
-
-  List<Ingredient> get expiredIngredients =>
-      state.where((i) => i.isExpired).toList();
-
-  List<Ingredient> get byCategory =>
-      [...state]..sort((a, b) => a.category.index.compareTo(b.category.index));
+  Future<void> updateQuantity(String id, double quantity) async {
+    final uid = ref.read(authStateProvider).value?.uid;
+    if (uid == null || !ref.read(firebaseAvailableProvider)) {
+      state = AsyncData((state.valueOrNull ?? []).map((i) {
+        if (i.id == id) return i.copyWith(quantity: quantity);
+        return i;
+      }).toList());
+      return;
+    }
+    await FirestoreService.updateIngredientQuantity(uid, id, quantity);
+  }
 }
 
 final fridgeProvider =
-    StateNotifierProvider<FridgeNotifier, List<Ingredient>>(
-  (ref) => FridgeNotifier(),
-);
+    StreamNotifierProvider<FridgeNotifier, List<Ingredient>>(FridgeNotifier.new);
 
 final urgentIngredientsProvider = Provider<List<Ingredient>>((ref) {
-  return ref.watch(fridgeProvider.notifier).urgentIngredients;
+  final ingredients = ref.watch(fridgeProvider).valueOrNull ?? [];
+  return ingredients.where((i) => i.isUrgent && !i.isExpired).toList();
 });

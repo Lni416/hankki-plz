@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 enum IngredientCategory {
@@ -68,4 +69,32 @@ class Ingredient {
         expiryDate: expiryDate ?? this.expiryDate,
         emoji: emoji,
       );
+
+  factory Ingredient.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Ingredient(
+      id: doc.id,
+      name: data['name'] as String,
+      category: IngredientCategory.values.firstWhere(
+        (c) => c.name == (data['category'] as String? ?? 'vegetable'),
+        orElse: () => IngredientCategory.vegetable,
+      ),
+      quantity: (data['quantity'] as num?)?.toDouble() ?? 1.0,
+      unit: data['unit'] as String? ?? '개',
+      expiryDate: data['expiryDate'] != null
+          ? (data['expiryDate'] as Timestamp).toDate()
+          : DateTime.now().add(const Duration(days: 7)),
+      emoji: data['emoji'] as String? ?? '🥬',
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'name': name,
+        'category': category.name,
+        'quantity': quantity,
+        'unit': unit,
+        'expiryDate': Timestamp.fromDate(expiryDate),
+        'emoji': emoji,
+        'addedAt': FieldValue.serverTimestamp(),
+      };
 }

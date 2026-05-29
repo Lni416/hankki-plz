@@ -21,9 +21,18 @@ dependencies:
   fl_chart: ^0.68.0
   flutter_animate: ^4.5.0
   google_fonts: ^6.2.1
+  cached_network_image: ^3.3.1
 
-  # 로컬 저장소
-  shared_preferences: ^2.3.2
+  # Firebase
+  firebase_core: ^3.0.0
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+  firebase_storage: ^12.0.0
+  firebase_messaging: ^15.0.0
+  google_sign_in: ^6.2.0
+
+  # 카메라 / 미디어
+  image_picker: ^1.1.0
 
   # 유틸
   intl: ^0.19.0
