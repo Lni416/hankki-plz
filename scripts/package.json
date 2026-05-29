@@ -1,0 +1,21 @@
+{
+  "name": "hankki-plz-scripts",
+  "private": true,
+  "scripts": {
+    "generate": "ts-node generate-recipes.ts",
+    "label": "ts-node label-difficulty.ts",
+    "seed": "ts-node seed-to-firestore.ts",
+    "all": "npm run generate && npm run label && npm run seed"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "firebase-admin": "^12.0.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0"
+  }
+}
