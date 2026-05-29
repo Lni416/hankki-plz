@@ -49,3 +49,21 @@ app.*.map.json
 
 # macOS
 .DS_Store
+
+# Firebase 설정 파일 — 절대 커밋 금지 (팀원에게 별도 공유)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
+# Cloud Functions 빌드 결과물
+functions/lib/
+functions/node_modules/
+
+# 스크립트 빌드 및 생성 결과
+scripts/node_modules/
+scripts/dist/
+data/
+
+# 환경 변수
+.env
+.env.*
+*.local
