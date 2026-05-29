@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../services/notification_service.dart';
 
 /// Firebase 초기화 여부 — main.dart에서 ProviderScope override로 설정됨
 final firebaseAvailableProvider = Provider<bool>((_) => false);
@@ -30,7 +31,10 @@ class AuthNotifier extends AsyncNotifier<void> {
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+      if (userCred.user != null) {
+        await NotificationService.initialize(userCred.user!.uid);
+      }
       state = const AsyncData(null);
     } catch (e, s) {
       state = AsyncError(e, s);
@@ -40,7 +44,10 @@ class AuthNotifier extends AsyncNotifier<void> {
   Future<void> signInAnonymously() async {
     try {
       state = const AsyncLoading();
-      await FirebaseAuth.instance.signInAnonymously();
+      final userCred = await FirebaseAuth.instance.signInAnonymously();
+      if (userCred.user != null) {
+        await NotificationService.initialize(userCred.user!.uid);
+      }
       state = const AsyncData(null);
     } catch (e, s) {
       state = AsyncError(e, s);
