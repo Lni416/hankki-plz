@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/learn_card.dart';
 import '../models/mock_data.dart';
 import '../models/user_stats.dart';
+import '../providers/recipe_provider.dart';
 import '../services/firestore_service.dart';
 import 'auth_provider.dart';
 
@@ -74,8 +75,20 @@ class LearnNotifier extends AsyncNotifier<UserStats> {
 final learnProvider =
     AsyncNotifierProvider<LearnNotifier, UserStats>(LearnNotifier.new);
 
-final currentLessonCardsProvider = Provider<List<LearnCard>>((ref) {
-  return mockLearnCards;
+/// 선택된 레시피의 학습카드 — Firestore 우선, 없으면 목 데이터
+final currentLessonCardsProvider = FutureProvider<List<LearnCard>>((ref) async {
+  if (!ref.read(firebaseAvailableProvider)) {
+    return mockLearnCards;
+  }
+  final recipe = ref.watch(selectedRecipeProvider);
+  if (recipe == null) return mockLearnCards;
+
+  try {
+    final cards = await FirestoreService.getLessonCards(recipe.id);
+    return cards.isEmpty ? mockLearnCards : cards;
+  } catch (_) {
+    return mockLearnCards;
+  }
 });
 
 final lessonProgressProvider = StateProvider<int>((ref) => 0);

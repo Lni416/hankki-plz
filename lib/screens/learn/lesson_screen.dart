@@ -16,15 +16,23 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
   int _currentIndex = 0;
   int? _selectedAnswer;
   bool _showResult = false;
+  List<LearnCard> _cards = [];
 
-  List<LearnCard> get _cards => ref.read(currentLessonCardsProvider);
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() async {
+      final cards = await ref.read(currentLessonCardsProvider.future);
+      if (mounted) setState(() => _cards = cards);
+    });
+  }
 
-  LearnCard get _current => _cards[_currentIndex];
-  bool get _isLast => _currentIndex >= _cards.length - 1;
+  LearnCard? get _current => _cards.isEmpty ? null : _cards[_currentIndex];
+  bool get _isLast => _cards.isEmpty || _currentIndex >= _cards.length - 1;
 
   void _next() {
-    if (_current.type == CardType.quiz &&
-        _selectedAnswer == null) return;
+    if (_current == null) return;
+    if (_current!.type == CardType.quiz && _selectedAnswer == null) return;
 
     if (_isLast) {
       _completLesson();
@@ -107,45 +115,48 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                transitionBuilder: (child, anim) => SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(1, 0),
-                    end: Offset.zero,
-                  ).animate(anim),
-                  child: child,
-                ),
-                child: KeyedSubtree(
-                  key: ValueKey(_currentIndex),
-                  child: _buildCard(),
-                ),
+      body: _cards.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, anim) => SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(1, 0),
+                          end: Offset.zero,
+                        ).animate(anim),
+                        child: child,
+                      ),
+                      child: KeyedSubtree(
+                        key: ValueKey(_currentIndex),
+                        child: _buildCard(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: (_current?.type == CardType.quiz &&
+                              _selectedAnswer == null)
+                          ? null
+                          : _next,
+                      child: Text(_isLast ? '완료하기' : '다음'),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: (_current.type == CardType.quiz &&
-                        _selectedAnswer == null)
-                    ? null
-                    : _next,
-                child: Text(_isLast ? '완료하기' : '다음'),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildCard() {
-    switch (_current.type) {
+    if (_current == null) return const SizedBox.shrink();
+    switch (_current!.type) {
       case CardType.quiz:
         return _buildQuizCard();
       default:
@@ -160,7 +171,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
       CardType.tip: AppColors.streakGold,
       CardType.quiz: AppColors.secondary,
     };
-    final color = typeColors[_current.type]!;
+    final color = typeColors[_current!.type]!;
 
     return Container(
       width: double.infinity,
@@ -187,7 +198,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              _current.typeLabel,
+              _current!.typeLabel,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -197,12 +208,12 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            _current.emoji,
+            _current!.emoji,
             style: const TextStyle(fontSize: 64),
           ),
           const SizedBox(height: 16),
           Text(
-            _current.title,
+            _current!.title,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 20,
@@ -211,7 +222,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _current.content,
+            _current!.content,
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 15,
@@ -255,12 +266,12 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _current.emoji,
+              _current!.emoji,
               style: const TextStyle(fontSize: 48),
             ),
             const SizedBox(height: 12),
             Text(
-              _current.title,
+              _current!.title,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -268,14 +279,14 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _current.content,
+              _current!.content,
               style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 20),
-            ...(_current.quizOptions ?? []).asMap().entries.map((e) {
+            ...(_current!.quizOptions ?? []).asMap().entries.map((e) {
               final i = e.key;
               final opt = e.value;
               final isSelected = _selectedAnswer == i;
@@ -363,7 +374,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: (_current.quizOptions?[_selectedAnswer!].isCorrect ??
+                  color: (_current!.quizOptions?[_selectedAnswer!].isCorrect ??
                               false)
                           ? AppColors.secondary.withOpacity(0.1)
                           : AppColors.danger.withOpacity(0.1),
@@ -372,7 +383,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                 child: Row(
                   children: [
                     Text(
-                      (_current.quizOptions?[_selectedAnswer!].isCorrect ??
+                      (_current!.quizOptions?[_selectedAnswer!].isCorrect ??
                               false)
                           ? '🎉'
                           : '💡',
@@ -381,7 +392,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        (_current.quizOptions?[_selectedAnswer!].isCorrect ??
+                        (_current!.quizOptions?[_selectedAnswer!].isCorrect ??
                                 false)
                             ? '정답이에요! 찬밥은 수분이 적어 볶음밥이 더 잘 됩니다.'
                             : '정답은 "찬밥을 사용한다"예요. 수분이 적어 볶음밥이 더 잘 됩니다!',
