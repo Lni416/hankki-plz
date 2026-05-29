@@ -41,7 +41,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
       );
     }
 
-    final fridge = ref.watch(fridgeProvider);
+    final fridge = ref.watch(fridgeProvider).valueOrNull ?? [];
     final fridgeNames = fridge.map((i) => i.name.toLowerCase()).toSet();
 
     return Scaffold(

@@ -47,6 +47,25 @@
 			</array>
 		</dict>
 	</dict>
+	<!-- Google Sign-In 콜백 URL scheme
+	     GoogleService-Info.plist 다운로드 후 REVERSED_CLIENT_ID 값으로 교체 필요
+	     예: com.googleusercontent.apps.123456789-abcdefg -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>REPLACE_WITH_REVERSED_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
+	<!-- 카메라 권한 -->
+	<key>NSCameraUsageDescription</key>
+	<string>냉장고 재료를 촬영해 자동으로 인식합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>갤러리에서 재료 사진을 선택합니다.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
