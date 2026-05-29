@@ -11,11 +11,7 @@ class FridgeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ingredients = ref.watch(fridgeProvider);
-    final grouped = <IngredientCategory, List<Ingredient>>{};
-    for (final i in ingredients) {
-      grouped.putIfAbsent(i.category, () => []).add(i);
-    }
+    final ingredientsAsync = ref.watch(fridgeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -43,22 +39,33 @@ class FridgeScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('재료 추가', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
-      body: ingredients.isEmpty
-          ? _buildEmpty(context, ref)
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-              itemCount: grouped.length,
-              itemBuilder: (context, index) {
-                final category = grouped.keys.elementAt(index);
-                final items = grouped[category]!;
-                return _CategorySection(
-                  category: category,
-                  items: items,
-                  sectionIndex: index,
-                  onDelete: (id) => ref.read(fridgeProvider.notifier).removeIngredient(id),
+      body: ingredientsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('오류: $e')),
+        data: (ingredients) {
+          final grouped = <IngredientCategory, List<Ingredient>>{};
+          for (final i in ingredients) {
+            grouped.putIfAbsent(i.category, () => []).add(i);
+          }
+          return ingredients.isEmpty
+              ? _buildEmpty(context, ref)
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                  itemCount: grouped.length,
+                  itemBuilder: (context, index) {
+                    final category = grouped.keys.elementAt(index);
+                    final items = grouped[category]!;
+                    return _CategorySection(
+                      category: category,
+                      items: items,
+                      sectionIndex: index,
+                      onDelete: (id) =>
+                          ref.read(fridgeProvider.notifier).removeIngredient(id),
+                    );
+                  },
                 );
-              },
-            ),
+        },
+      ),
     );
   }
 
