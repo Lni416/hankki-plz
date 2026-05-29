@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/fridge_provider.dart';
 import '../../providers/recipe_provider.dart';
 import '../../providers/learn_provider.dart';
+import '../../models/user_stats.dart';
 import '../../widgets/streak_badge.dart';
 import '../../widgets/difficulty_stars.dart';
 import '../../widgets/match_rate_bar.dart';
@@ -15,7 +16,8 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(learnProvider);
+    final statsAsync = ref.watch(learnProvider);
+    final stats = statsAsync.valueOrNull ?? const UserStats();
     final urgent = ref.watch(urgentIngredientsProvider);
     final recipes = ref.watch(recommendedRecipesProvider);
     final topRecipes = recipes.take(3).toList();
@@ -37,19 +39,22 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
                 _buildSectionTitle('오늘의 추천 레시피 🍽️'),
                 const SizedBox(height: 12),
-                ...topRecipes.asMap().entries.map((e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _RecipeCard(
-                        recipe: e.value,
-                        index: e.key,
-                        onTap: () {
-                          ref
-                              .read(selectedRecipeProvider.notifier)
-                              .state = e.value;
-                          context.go('/recipe/detail');
-                        },
-                      ),
-                    )),
+                if (ref.watch(allRecipesProvider).isLoading)
+                  const Center(child: CircularProgressIndicator())
+                else
+                  ...topRecipes.asMap().entries.map((e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _RecipeCard(
+                          recipe: e.value,
+                          index: e.key,
+                          onTap: () {
+                            ref
+                                .read(selectedRecipeProvider.notifier)
+                                .state = e.value;
+                            context.go('/recipe/detail');
+                          },
+                        ),
+                      )),
                 const SizedBox(height: 80),
               ]),
             ),
