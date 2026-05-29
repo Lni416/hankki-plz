@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/user_stats.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/learn_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -9,26 +11,28 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(learnProvider);
+    final statsAsync = ref.watch(learnProvider);
+    final stats = statsAsync.valueOrNull ?? const UserStats();
+    final user = ref.watch(authStateProvider).valueOrNull;
 
     return Scaffold(
       appBar: AppBar(title: const Text('프로필 👤')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _buildProfileCard(stats),
+          _buildProfileCard(stats, user?.displayName, user?.photoURL),
           const SizedBox(height: 20),
-          _buildWeeklyActivity(),
+          _buildWeeklyActivity(stats.weeklyXp),
           const SizedBox(height: 20),
           _buildAlertSettings(),
           const SizedBox(height: 20),
-          _buildMenuItems(context),
+          _buildMenuItems(context, ref),
         ],
       ),
     );
   }
 
-  Widget _buildProfileCard(UserStats stats) {
+  Widget _buildProfileCard(UserStats stats, String? displayName, String? photoUrl) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -47,8 +51,12 @@ class ProfileScreen extends ConsumerWidget {
               ),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Center(
-              child: Text('👨‍🍳', style: TextStyle(fontSize: 36)),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: photoUrl != null
+                  ? Image.network(photoUrl, fit: BoxFit.cover)
+                  : const Center(
+                      child: Text('👨‍🍳', style: TextStyle(fontSize: 36))),
             ),
           ),
           const SizedBox(width: 16),
@@ -56,9 +64,9 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '사용자님',
-                  style: TextStyle(
+                Text(
+                  displayName ?? '사용자님',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
@@ -88,8 +96,11 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildWeeklyActivity() {
-    final data = [30.0, 50.0, 0.0, 80.0, 60.0, 90.0, 50.0];
+  Widget _buildWeeklyActivity(List<int> weeklyXp) {
+    final maxXp = weeklyXp.reduce((a, b) => a > b ? a : b);
+    final data = weeklyXp
+        .map((xp) => maxXp > 0 ? (xp / maxXp * 100).toDouble() : 0.0)
+        .toList();
     final days = ['월', '화', '수', '목', '금', '토', '일'];
 
     return Container(
@@ -191,7 +202,8 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMenuItems(BuildContext context) {
+  Widget _buildMenuItems(BuildContext context, WidgetRef ref) {
+    final firebaseAvailable = ref.read(firebaseAvailableProvider);
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -205,6 +217,13 @@ class ProfileScreen extends ConsumerWidget {
           _MenuItem(Icons.notifications_outlined, '알림 내역', () {}),
           _MenuItem(Icons.help_outline, '도움말', () {}),
           _MenuItem(Icons.info_outline, '앱 정보 v0.1.0', () {}),
+          if (firebaseAvailable)
+            _MenuItem(
+              Icons.logout,
+              '로그아웃',
+              () => ref.read(authNotifierProvider.notifier).signOut(),
+              color: AppColors.danger,
+            ),
         ],
       ),
     );
@@ -281,8 +300,9 @@ class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Color? color;
 
-  const _MenuItem(this.icon, this.label, this.onTap);
+  const _MenuItem(this.icon, this.label, this.onTap, {this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -293,12 +313,12 @@ class _MenuItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: AppColors.textSecondary),
+            Icon(icon, size: 20, color: color ?? AppColors.textSecondary),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(fontSize: 14, color: color),
               ),
             ),
             const Icon(Icons.chevron_right,
