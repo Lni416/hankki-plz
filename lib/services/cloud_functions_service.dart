@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_functions/cloud_functions.dart';
-import '../providers/auth_provider.dart';
 
 /// Firebase Cloud Functions 호출 서비스
 /// Firebase 미설정 시에는 목 응답 반환
