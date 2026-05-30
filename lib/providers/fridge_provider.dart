@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/ingredient.dart';
 import '../models/mock_data.dart';
@@ -12,7 +13,16 @@ class FridgeNotifier extends StreamNotifier<List<Ingredient>> {
       return Stream.value(mockIngredients);
     }
 
-    final uid = ref.watch(authStateProvider).value?.uid;
+    final authAsync = ref.watch(authStateProvider);
+
+    // auth가 복원 중이면 빈 리스트 대신 로딩 상태를 유지 (never-emitting stream)
+    if (authAsync.isLoading) {
+      final controller = StreamController<List<Ingredient>>();
+      ref.onDispose(controller.close);
+      return controller.stream;
+    }
+
+    final uid = authAsync.value?.uid;
     if (uid == null) {
       return Stream.value([]);
     }

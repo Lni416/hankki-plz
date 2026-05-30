@@ -13,6 +13,11 @@ final allRecipesProvider = FutureProvider<List<Recipe>>((ref) async {
   if (!ref.read(firebaseAvailableProvider)) {
     return mockRecipes;
   }
+  // 새로고침 시 auth 복원 전에 Firestore에 접근하면 권한 오류가 발생하므로
+  // authStateProvider가 로딩 중이면 완료될 때까지 대기 (watch → 자동 재실행)
+  final authAsync = ref.watch(authStateProvider);
+  if (authAsync.isLoading) return [];
+  if (authAsync.value == null) return mockRecipes;
   try {
     return await FirestoreService.getAllRecipes();
   } catch (_) {

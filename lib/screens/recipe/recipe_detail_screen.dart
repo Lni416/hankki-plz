@@ -35,9 +35,12 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
   Widget build(BuildContext context) {
     final recipe = ref.watch(selectedRecipeProvider);
     if (recipe == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: Text('레시피를 찾을 수 없어요')),
+      // 새로고침 후 selectedRecipeProvider가 초기화된 경우 — 레시피 목록으로 이동
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.go('/recipe');
+      });
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
