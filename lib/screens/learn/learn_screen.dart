@@ -41,7 +41,7 @@ class LearnScreen extends ConsumerWidget {
           const SizedBox(height: 20),
           _buildWeeklyQuests(stats),
           const SizedBox(height: 20),
-          _buildBadges(),
+          _buildBadges(stats),
         ],
       ),
     );
@@ -188,8 +188,8 @@ class LearnScreen extends ConsumerWidget {
 
   Widget _buildWeeklyQuests(UserStats stats) {
     final quests = [
-      _Quest('채소 요리 2번 완성', 1, 2, '🥦'),
-      _Quest('새 레시피 도전하기', 0, 1, '🌟'),
+      _Quest('오늘 레슨 완료하기', stats.todayLessons.clamp(0, 1), 1, '📚'),
+      _Quest('XP 50 모으기', stats.xp.clamp(0, 50), 50, '🌟'),
       _Quest('5일 연속 학습', stats.streak.clamp(0, 5), 5, '🔥'),
     ];
 
@@ -211,14 +211,14 @@ class LearnScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildBadges() {
+  Widget _buildBadges(UserStats stats) {
     final badges = [
-      ('🥚', '계란 마스터', true),
-      ('🔥', '3일 스트릭', true),
-      ('🍚', '볶음밥 완성', false),
-      ('⭐', '첫 요리', true),
-      ('🥗', '채소 챔피언', false),
-      ('👨‍🍳', '요리사 입문', false),
+      ('⭐', '첫 레슨', stats.xp > 0),
+      ('🔥', '3일 스트릭', stats.streak >= 3),
+      ('💪', '7일 스트릭', stats.streak >= 7),
+      ('🌱', 'XP 100 달성', stats.xp >= 100),
+      ('🍳', '레벨 2', stats.level >= 2),
+      ('👨‍🍳', '입문 요리사', stats.level >= 3),
     ];
 
     return Column(

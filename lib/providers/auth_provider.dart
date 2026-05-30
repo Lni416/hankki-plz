@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../services/notification_service.dart';
@@ -21,18 +22,29 @@ class AuthNotifier extends AsyncNotifier<void> {
   Future<void> signInWithGoogle() async {
     try {
       state = const AsyncLoading();
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        state = const AsyncData(null);
-        return;
+
+      UserCredential userCred;
+
+      if (kIsWeb) {
+        // 웹: Firebase Auth 팝업 방식 (google_sign_in 불필요)
+        final provider = GoogleAuthProvider();
+        userCred = await FirebaseAuth.instance.signInWithPopup(provider);
+      } else {
+        // 모바일: google_sign_in 패키지 사용
+        final googleUser = await GoogleSignIn().signIn();
+        if (googleUser == null) {
+          state = const AsyncData(null);
+          return;
+        }
+        final googleAuth = await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+        userCred = await FirebaseAuth.instance.signInWithCredential(credential);
       }
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
-      if (userCred.user != null) {
+
+      if (userCred.user != null && !kIsWeb) {
         await NotificationService.initialize(userCred.user!.uid);
       }
       state = const AsyncData(null);
@@ -45,7 +57,7 @@ class AuthNotifier extends AsyncNotifier<void> {
     try {
       state = const AsyncLoading();
       final userCred = await FirebaseAuth.instance.signInAnonymously();
-      if (userCred.user != null) {
+      if (userCred.user != null && !kIsWeb) {
         await NotificationService.initialize(userCred.user!.uid);
       }
       state = const AsyncData(null);
@@ -55,7 +67,7 @@ class AuthNotifier extends AsyncNotifier<void> {
   }
 
   Future<void> signOut() async {
-    await GoogleSignIn().signOut();
+    if (!kIsWeb) await GoogleSignIn().signOut();
     await FirebaseAuth.instance.signOut();
     state = const AsyncData(null);
   }

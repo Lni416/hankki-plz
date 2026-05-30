@@ -307,50 +307,51 @@ final mockRecipes = [
   ),
 ];
 
+/// 계란볶음밥(r1) 전용 학습카드 — Firestore 미설정 시 fallback
 final mockLearnCards = [
   const LearnCard(
     id: 'lc1',
     type: CardType.intro,
-    title: '달걀 — 요린이의 최고 친구',
-    emoji: '🥚',
+    title: '계란볶음밥, 이 재료면 충분해요',
+    emoji: '🍳',
     content:
-        '달걀은 단백질, 비타민, 미네랄이 풍부한 완전 식품이에요.\n\n냉장 보관 시 약 2~3주 신선하게 유지되며, 삶기·굽기·볶기 등 다양한 요리에 활용할 수 있어 요린이에게 가장 적합한 식재료입니다.',
+        '오늘 배울 요리는 계란볶음밥이에요!\n\n필요한 재료는 단 5가지:\n🍚 찬밥 1공기 — 볶음밥의 핵심\n🥚 달걀 2개 — 고소함 담당\n🧅 대파 0.5대 — 향과 식감\n🫙 간장 1큰술 — 감칠맛\n🫙 참기름 0.5큰술 — 마무리 향\n\n당근을 더하면 색감과 영양까지 챙길 수 있어요.',
   ),
   const LearnCard(
     id: 'lc2',
     type: CardType.technique,
-    title: '볶음의 기본: 강불 vs 중불',
-    emoji: '🔥',
+    title: '핵심 기술 ① 왜 찬밥일까?',
+    emoji: '🍚',
     content:
-        '볶음 요리의 핵심은 불 조절이에요.\n\n🔥 강불: 짧게 볶아 식감을 살릴 때 (볶음밥, 채소 볶음)\n🌡️ 중불: 속까지 익혀야 할 때 (고기 볶음, 찌개)\n\n팬이 충분히 달궈진 뒤 재료를 넣어야 들러붙지 않아요!',
+        '계란볶음밥의 성패는 밥에 달렸어요.\n\n갓 지은 따뜻한 밥은 수분이 많아 볶을 때 뭉치고 질척해져요.\n\n반면 식은 찬밥은 밥알 표면이 살짝 마르고 단단해서 기름을 머금으며 고슬고슬하게 볶여요.\n\n💡 찬밥이 없다면? 갓 지은 밥을 넓은 접시에 펼쳐 5분만 식히세요.',
   ),
   const LearnCard(
     id: 'lc3',
-    type: CardType.quiz,
-    title: '볶음밥을 맛있게 만드는 핵심은?',
-    emoji: '❓',
-    content: '계란볶음밥을 만들 때 가장 중요한 것은 무엇일까요?',
-    quizOptions: [
-      QuizOption(text: '찬밥을 사용한다', isCorrect: true),
-      QuizOption(text: '약불에서 천천히 볶는다', isCorrect: false),
-      QuizOption(text: '물을 조금 넣는다', isCorrect: false),
-      QuizOption(text: '뚜껑을 덮고 찐다', isCorrect: false),
-    ],
+    type: CardType.technique,
+    title: '핵심 기술 ② 강불에서 빠르게',
+    emoji: '🔥',
+    content:
+        '볶음밥은 "속도전"이에요.\n\n팬을 충분히 달군 뒤 강불을 유지하세요. 강불에서 빠르게 볶아야:\n\n✅ 밥알이 팬에 들러붙지 않고\n✅ 수분이 빠르게 날아가 고슬고슬해지며\n✅ 불맛(웍헤이)이 살아나요\n\n밥을 넣은 뒤엔 주걱으로 누르지 말고 뒤집듯이 볶아 주세요.',
   ),
   const LearnCard(
     id: 'lc4',
-    type: CardType.tip,
-    title: '칼 사용이 무서운 요린이를 위한 팁',
-    emoji: '🔪',
-    content:
-        '칼이 무서운 게 당연해요! 이렇게 해보세요:\n\n✅ 재료를 도마에 놓고 손가락을 고양이 발처럼 구부리기\n✅ 칼 끝을 도마에 붙이고 앞뒤로 흔들듯 썰기\n✅ 처음엔 부드러운 두부나 삶은 계란부터 연습하기\n\n연습하면 금방 늘어요! 💪',
+    type: CardType.quiz,
+    title: '퀴즈: 고슬고슬 볶음밥의 비결은?',
+    emoji: '❓',
+    content: '계란볶음밥을 고슬고슬하게 만드는 가장 중요한 비결은 무엇일까요?',
+    quizOptions: [
+      QuizOption(text: '찬밥(식은 밥)을 사용한다', isCorrect: true),
+      QuizOption(text: '약불에서 천천히 볶는다', isCorrect: false),
+      QuizOption(text: '물을 조금 넣어 촉촉하게 한다', isCorrect: false),
+      QuizOption(text: '뚜껑을 덮고 뜸을 들인다', isCorrect: false),
+    ],
   ),
   const LearnCard(
     id: 'lc5',
-    type: CardType.technique,
-    title: '간 맞추기의 기술',
+    type: CardType.tip,
+    title: '마무리 팁: 간장과 참기름 타이밍',
     emoji: '🧂',
     content:
-        '요리에서 가장 어려운 건 간 맞추기!\n\n기본 원칙:\n1️⃣ 간은 조금씩 나눠서 맞추기\n2️⃣ 싱거운 건 언제든 고칠 수 있지만, 짠 건 되돌리기 어려워요\n3️⃣ 뜨거울 때보다 식었을 때 더 짜게 느껴져요\n\n처음엔 레시피 분량을 정확히 따라가세요!',
+        '같은 재료라도 넣는 순서가 맛을 바꿔요.\n\n🫙 간장은 밥을 볶을 때 팬 가장자리에 둘러 넣으세요. 뜨거운 팬에 닿아 살짝 타면서 불향과 감칠맛이 확 살아나요.\n\n🫙 참기름은 반드시 불을 끈 뒤 넣으세요. 가열하면 고소한 향이 날아가 버려요.\n\n이 두 가지만 지켜도 가게 볶음밥 맛이 나요! 👨‍🍳',
   ),
 ];

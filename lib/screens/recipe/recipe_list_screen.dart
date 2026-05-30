@@ -179,7 +179,7 @@ class _RecipeListCard extends StatelessWidget {
               ),
               child: Center(
                 child: Text(recipe.emoji,
-                    style: const TextStyle(fontSize: 36)),
+                    style: emojiStyle(36)),
               ),
             ),
             const SizedBox(width: 14),

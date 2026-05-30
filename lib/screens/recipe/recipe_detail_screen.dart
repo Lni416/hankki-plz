@@ -93,13 +93,19 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(recipe.emoji, style: const TextStyle(fontSize: 72)),
+              Text(recipe.emoji, style: emojiStyle(72)),
               const SizedBox(height: 8),
-              Text(
-                recipe.title,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  recipe.title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],

@@ -53,4 +53,18 @@ class CloudFunctionsService {
       throw Exception('레시피 추천 실패: ${e.message}');
     }
   }
+
+  // ── 학습카드 생성 ─────────────────────────────────────────────────────────
+
+  /// 해당 레시피의 학습카드를 Gemini로 생성하도록 Cloud Function 요청.
+  /// Function이 카드를 recipes/{recipeId}/lessonCards에 저장하므로,
+  /// 호출 후 Firestore에서 다시 읽어오면 된다.
+  static Future<void> generateLessonCards(String recipeId) async {
+    try {
+      final callable = _functions.httpsCallable('generateLessonCardsForRecipe');
+      await callable.call<Map<String, dynamic>>({'recipeId': recipeId});
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception('학습카드 생성 실패: ${e.message}');
+    }
+  }
 }

@@ -101,7 +101,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
       appBar: AppBar(
         title: Text('${_currentIndex + 1} / ${_cards.length}'),
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.pop(context),
         ),
         bottom: PreferredSize(
@@ -159,6 +159,8 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
     switch (_current!.type) {
       case CardType.quiz:
         return _buildQuizCard();
+      case CardType.step:
+        return _buildStepCard();
       default:
         return _buildContentCard();
     }
@@ -175,7 +177,6 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(24),
@@ -188,51 +189,167 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _current!.typeLabel,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: color,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _current!.typeLabel,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            _current!.emoji,
-            style: const TextStyle(fontSize: 64),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _current!.title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
+            const SizedBox(height: 20),
+            Text(
+              _current!.emoji,
+              style: emojiStyle(64),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _current!.content,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.7,
-              color: AppColors.textSecondary,
+            const SizedBox(height: 16),
+            Text(
+              _current!.title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
             ),
+            const SizedBox(height: 16),
+            Text(
+              _current!.content,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.7,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate().fadeIn().scale(begin: const Offset(0.95, 0.95));
+  }
+
+  /// 조리 단계 전용 카드
+  Widget _buildStepCard() {
+    final stepNum = _current!.stepNumber ?? 1;
+    final totalSteps = _cards.where((c) => c.type == CardType.step).length;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.divider),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 16,
+            offset: Offset(0, 4),
           ),
         ],
       ),
-    ).animate().fadeIn().scale(begin: const Offset(0.95, 0.95));
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 단계 뱃지
+            Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '조리 단계  $stepNum / $totalSteps',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // 단계 번호 원형 배지
+            Center(
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Center(
+                  child: Text(
+                    '$stepNum',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 36,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // 조리 설명
+            Text(
+              _current!.content,
+              style: const TextStyle(
+                fontSize: 17,
+                height: 1.7,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            // 팁 (있는 경우)
+            if (_current!.tip != null) ...[
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.streakGold.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.streakGold.withOpacity(0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('💡', style: TextStyle(fontSize: 16)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _current!.tip!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          height: 1.6,
+                          color: Color(0xFF7B5800),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ).animate().fadeIn().slideX(begin: 0.05);
   }
 
   Widget _buildQuizCard() {
@@ -267,7 +384,7 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
             const SizedBox(height: 16),
             Text(
               _current!.emoji,
-              style: const TextStyle(fontSize: 48),
+              style: emojiStyle(48),
             ),
             const SizedBox(height: 12),
             Text(
@@ -371,40 +488,44 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
             }),
             if (_showResult) ...[
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: (_current!.quizOptions?[_selectedAnswer!].isCorrect ??
-                              false)
-                          ? AppColors.secondary.withOpacity(0.1)
-                          : AppColors.danger.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      (_current!.quizOptions?[_selectedAnswer!].isCorrect ??
-                              false)
-                          ? '🎉'
-                          : '💡',
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        (_current!.quizOptions?[_selectedAnswer!].isCorrect ??
-                                false)
-                            ? '정답이에요! 찬밥은 수분이 적어 볶음밥이 더 잘 됩니다.'
-                            : '정답은 "찬밥을 사용한다"예요. 수분이 적어 볶음밥이 더 잘 됩니다!',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+              Builder(builder: (context) {
+                final isCorrect =
+                    _current!.quizOptions?[_selectedAnswer!].isCorrect ??
+                        false;
+                final correctOption = _current!.quizOptions
+                    ?.firstWhere((o) => o.isCorrect,
+                        orElse: () => _current!.quizOptions!.first);
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isCorrect
+                        ? AppColors.secondary.withOpacity(0.1)
+                        : AppColors.danger.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isCorrect ? '🎉' : '💡',
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isCorrect
+                              ? '정답이에요!'
+                              : '정답은 "${correctOption?.text ?? ''}"예요!',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ).animate().fadeIn(),
+                    ],
+                  ),
+                );
+              }).animate().fadeIn(),
             ],
           ],
         ),

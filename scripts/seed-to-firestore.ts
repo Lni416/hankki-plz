@@ -1,6 +1,10 @@
 /**
  * 레시피 데이터를 Firestore에 시드하는 스크립트 (1회성)
  *
+ * 각 레시피 문서를 업로드하고, recipe.lessonCards에 직접 작성된 학습카드를
+ * recipes/{recipeId}/lessonCards/{order} 서브컬렉션에 저장한다.
+ * (Gemini API 호출 없음 — 카드는 data/recipes-labeled.json에 직접 포함)
+ *
  * 사용법:
  *   export GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account.json
  *   npx ts-node scripts/seed-to-firestore.ts
@@ -18,6 +22,20 @@ const INPUT_FILE = path.join(__dirname, "../data/recipes-labeled.json");
 admin.initializeApp();
 const db = admin.firestore();
 
+interface QuizOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+interface LessonCard {
+  order: number;
+  type: "intro" | "technique" | "quiz" | "tip";
+  title: string;
+  content: string;
+  emoji: string;
+  quizOptions?: QuizOption[];
+}
+
 interface LabeledRecipe {
   title: string;
   emoji: string;
@@ -31,6 +49,7 @@ interface LabeledRecipe {
   steps: unknown[];
   nutrition: unknown;
   thumbnailUrl?: string;
+  lessonCards?: LessonCard[];
   _featureScore?: number;
   _mlDifficulty?: number;
 }
@@ -44,35 +63,50 @@ async function seed() {
   const recipes: LabeledRecipe[] = JSON.parse(
     fs.readFileSync(INPUT_FILE, "utf-8")
   );
-  console.log(`📦 ${recipes.length}개 레시피 업로드 시작...`);
+  console.log(`📦 ${recipes.length}개 레시피 업로드 + 학습카드 시드 시작...`);
 
-  const BATCH_LIMIT = 400; // Firestore 배치 한 번에 500 작업 제한 (여유 둠)
   let uploaded = 0;
+  let cardsCreated = 0;
 
-  for (let i = 0; i < recipes.length; i += BATCH_LIMIT) {
-    const chunk = recipes.slice(i, i + BATCH_LIMIT);
+  for (const recipe of recipes) {
+    const id = uuidv4();
+    const recipeRef = db.collection("recipes").doc(id);
+
+    // 디버깅/카드 필드 제거 후 레시피 문서 저장
+    const {
+      _featureScore: _f,
+      _mlDifficulty: _m,
+      lessonCards,
+      ...clean
+    } = recipe;
+
     const batch = db.batch();
+    batch.set(recipeRef, {
+      ...clean,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      generatedBy: "manual",
+    });
 
-    for (const recipe of chunk) {
-      const id = uuidv4();
-      const ref = db.collection("recipes").doc(id);
-
-      // 디버깅 전용 필드 제거
-      const { _featureScore: _f, _mlDifficulty: _m, ...clean } = recipe;
-
-      batch.set(ref, {
-        ...clean,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        generatedBy: "gemini",
-      });
+    // 학습카드 서브컬렉션
+    const cards = lessonCards ?? [];
+    for (const card of cards) {
+      const cardRef = recipeRef
+        .collection("lessonCards")
+        .doc(String(card.order));
+      batch.set(cardRef, card);
     }
 
     await batch.commit();
-    uploaded += chunk.length;
-    console.log(`  ✅ ${uploaded}/${recipes.length} 업로드됨`);
+    uploaded++;
+    cardsCreated += cards.length;
+    console.log(
+      `  ✅ [${uploaded}/${recipes.length}] ${recipe.title} — 카드 ${cards.length}장`
+    );
   }
 
-  console.log(`\n🎉 시드 완료! Firestore recipes 컬렉션에 ${uploaded}개 레시피가 추가되었습니다.`);
+  console.log(
+    `\n🎉 시드 완료! 레시피 ${uploaded}개, 학습카드 ${cardsCreated}장이 Firestore에 추가되었습니다.`
+  );
 }
 
 seed().catch((e) => {

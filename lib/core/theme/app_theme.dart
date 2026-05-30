@@ -18,6 +18,20 @@ class AppColors {
   static const streakGold = Color(0xFFFFB300);
 }
 
+/// 이모지 전용 TextStyle.
+/// GoogleFonts(Noto Sans KR)가 전역 폰트로 설정되면 이모지 글리프가 없어
+/// 엉뚱한 그림으로 렌더링될 수 있다. fontFamilyFallback에 OS 컬러 이모지
+/// 폰트를 지정하면 Primary 폰트에 글리프가 없을 때 컬러 이모지로 fallback된다.
+TextStyle emojiStyle(double fontSize) => TextStyle(
+      fontSize: fontSize,
+      fontFamilyFallback: const [
+        'Apple Color Emoji',   // macOS / iOS
+        'Segoe UI Emoji',      // Windows
+        'Noto Color Emoji',    // Android / Linux
+        'Noto Emoji',          // 최후 fallback
+      ],
+    );
+
 class AppTheme {
   static ThemeData get light {
     final base = GoogleFonts.notoSansKrTextTheme();

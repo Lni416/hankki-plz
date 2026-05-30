@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/router.dart';
 import 'core/theme/app_theme.dart';
+import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 
 void main() async {
@@ -10,7 +11,9 @@ void main() async {
 
   bool firebaseReady = false;
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     firebaseReady = true;
   } catch (e) {
     // Firebase 설정 파일(google-services.json / GoogleService-Info.plist)이
@@ -28,16 +31,17 @@ void main() async {
   );
 }
 
-class HankkiApp extends StatelessWidget {
+class HankkiApp extends ConsumerWidget {
   const HankkiApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
     return MaterialApp.router(
       title: '한끼를 부탁해',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      routerConfig: appRouter,
+      routerConfig: router,
     );
   }
 }
