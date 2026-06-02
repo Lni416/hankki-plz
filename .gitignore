@@ -72,3 +72,4 @@ data/
 *service-account*.json
 *serviceAccount*.json
 *firebase-adminsdk*.json
+.firebase/
