@@ -70,6 +70,20 @@ class LearnNotifier extends AsyncNotifier<UserStats> {
     final uid = ref.read(authStateProvider).value?.uid;
     if (uid != null && ref.read(firebaseAvailableProvider)) {
       await FirestoreService.updateUserStats(uid, newStats);
+
+      // 요리 히스토리 기록 (선택된 레시피 기준)
+      final recipe = ref.read(selectedRecipeProvider);
+      if (recipe != null) {
+        try {
+          await FirestoreService.addHistory(
+            uid,
+            recipe.id,
+            recipe.title,
+            recipe.emoji,
+            xpEarned,
+          );
+        } catch (_) {}
+      }
     }
   }
 }

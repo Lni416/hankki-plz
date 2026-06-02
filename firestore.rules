@@ -17,6 +17,21 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == uid;
         allow write: if false; // Cloud Functions(Admin SDK)만 허용
       }
+
+      // 찜한 레시피 — 본인만 CRUD
+      match /favorites/{recipeId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // 요리 히스토리 — 본인만 CRUD
+      match /history/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // 알림 내역 — 본인 읽기·쓰기 (서버/클라이언트 모두 기록 가능)
+      match /notifications/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
     }
 
     // ── 레시피 DB ─────────────────────────────────────────────────────────

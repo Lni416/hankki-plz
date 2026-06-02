@@ -9,6 +9,10 @@ import '../screens/recipe/recipe_list_screen.dart';
 import '../screens/recipe/recipe_detail_screen.dart';
 import '../screens/learn/learn_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../screens/profile/favorites_screen.dart';
+import '../screens/profile/history_screen.dart';
+import '../screens/profile/notifications_screen.dart';
+import '../screens/profile/help_screen.dart';
 import 'shell_scaffold.dart';
 
 /// go_router를 Riverpod Provider로 감싸서 실제 ProviderScope 컨테이너를 사용
@@ -51,6 +55,24 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/profile',
             builder: (context, state) => const ProfileScreen(),
+            routes: [
+              GoRoute(
+                path: 'favorites',
+                builder: (context, state) => const FavoritesScreen(),
+              ),
+              GoRoute(
+                path: 'history',
+                builder: (context, state) => const HistoryScreen(),
+              ),
+              GoRoute(
+                path: 'notifications',
+                builder: (context, state) => const NotificationsScreen(),
+              ),
+              GoRoute(
+                path: 'help',
+                builder: (context, state) => const HelpScreen(),
+              ),
+            ],
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/user_stats.dart';
 import '../../providers/auth_provider.dart';
@@ -202,6 +203,23 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  void _showAppInfo(BuildContext context) {
+    showAboutDialog(
+      context: context,
+      applicationName: '한끼를 부탁해',
+      applicationVersion: 'v0.1.0',
+      applicationIcon: const Text('🍳', style: TextStyle(fontSize: 40)),
+      children: const [
+        SizedBox(height: 8),
+        Text(
+          '냉장고 속 재료로 요리를 배우는 1인 가구 집밥 학습 앱이에요. '
+          '보유 재료 기반 레시피 추천부터 단계별 학습, 스트릭까지 한 번에!',
+          style: TextStyle(fontSize: 13, height: 1.6),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMenuItems(BuildContext context, WidgetRef ref) {
     final firebaseAvailable = ref.read(firebaseAvailableProvider);
     return Container(
@@ -212,11 +230,16 @@ class ProfileScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          _MenuItem(Icons.favorite_outline, '찜한 레시피', () {}),
-          _MenuItem(Icons.history, '요리 히스토리', () {}),
-          _MenuItem(Icons.notifications_outlined, '알림 내역', () {}),
-          _MenuItem(Icons.help_outline, '도움말', () {}),
-          _MenuItem(Icons.info_outline, '앱 정보 v0.1.0', () {}),
+          _MenuItem(Icons.favorite_outline, '찜한 레시피',
+              () => context.push('/profile/favorites')),
+          _MenuItem(Icons.history, '요리 히스토리',
+              () => context.push('/profile/history')),
+          _MenuItem(Icons.notifications_outlined, '알림 내역',
+              () => context.push('/profile/notifications')),
+          _MenuItem(Icons.help_outline, '도움말',
+              () => context.push('/profile/help')),
+          _MenuItem(Icons.info_outline, '앱 정보 v0.1.0',
+              () => _showAppInfo(context)),
           if (firebaseAvailable)
             _MenuItem(
               Icons.logout,

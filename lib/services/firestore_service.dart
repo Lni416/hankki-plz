@@ -3,6 +3,7 @@ import '../models/ingredient.dart';
 import '../models/recipe.dart';
 import '../models/learn_card.dart';
 import '../models/user_stats.dart';
+import '../models/profile_models.dart';
 
 class FirestoreService {
   static FirebaseFirestore get _db => FirebaseFirestore.instance;
@@ -90,6 +91,80 @@ class FirestoreService {
         .collection('users')
         .doc(uid)
         .set(stats.toMap(), SetOptions(merge: true));
+  }
+
+  // ── 찜한 레시피 ───────────────────────────────────────────────────────────
+
+  static Stream<List<FavoriteRecipe>> streamFavorites(String uid) {
+    return _db
+        .collection('users')
+        .doc(uid)
+        .collection('favorites')
+        .orderBy('addedAt', descending: true)
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map((d) => FavoriteRecipe.fromFirestore(d)).toList());
+  }
+
+  static Future<void> addFavorite(
+      String uid, String recipeId, String title, String emoji) async {
+    await _db
+        .collection('users')
+        .doc(uid)
+        .collection('favorites')
+        .doc(recipeId)
+        .set({
+      'recipeId': recipeId,
+      'title': title,
+      'emoji': emoji,
+      'addedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  static Future<void> removeFavorite(String uid, String recipeId) async {
+    await _db
+        .collection('users')
+        .doc(uid)
+        .collection('favorites')
+        .doc(recipeId)
+        .delete();
+  }
+
+  // ── 요리 히스토리 ─────────────────────────────────────────────────────────
+
+  static Stream<List<CookingHistoryEntry>> streamHistory(String uid) {
+    return _db
+        .collection('users')
+        .doc(uid)
+        .collection('history')
+        .orderBy('completedAt', descending: true)
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map((d) => CookingHistoryEntry.fromFirestore(d)).toList());
+  }
+
+  static Future<void> addHistory(
+      String uid, String recipeId, String title, String emoji, int xpEarned) async {
+    await _db.collection('users').doc(uid).collection('history').add({
+      'recipeId': recipeId,
+      'title': title,
+      'emoji': emoji,
+      'xpEarned': xpEarned,
+      'completedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ── 알림 내역 ─────────────────────────────────────────────────────────────
+
+  static Stream<List<AppNotification>> streamNotifications(String uid) {
+    return _db
+        .collection('users')
+        .doc(uid)
+        .collection('notifications')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) =>
+            snap.docs.map((d) => AppNotification.fromFirestore(d)).toList());
   }
 
   // ── 추천 이력 ─────────────────────────────────────────────────────────────

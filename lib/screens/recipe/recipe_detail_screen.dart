@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../models/recipe.dart';
 import '../../providers/recipe_provider.dart';
 import '../../providers/fridge_provider.dart';
+import '../../providers/favorite_provider.dart';
 import '../../widgets/difficulty_stars.dart';
 
 class RecipeDetailScreen extends ConsumerStatefulWidget {
@@ -90,6 +91,30 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
         icon: const Icon(Icons.arrow_back_ios_new),
         onPressed: () => context.go('/recipe'),
       ),
+      actions: [
+        Consumer(
+          builder: (context, ref, _) {
+            final isFav = ref.watch(favoritesProvider).maybeWhen(
+                  data: (favs) =>
+                      favs.any((f) => f.recipeId == recipe.id),
+                  orElse: () => false,
+                );
+            return IconButton(
+              icon: Icon(
+                isFav ? Icons.favorite : Icons.favorite_border,
+                color: isFav ? AppColors.danger : null,
+              ),
+              onPressed: () {
+                ref.read(favoritesProvider.notifier).toggle(
+                      recipe.id,
+                      recipe.title,
+                      recipe.emoji,
+                    );
+              },
+            );
+          },
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           color: AppColors.cardBg,
