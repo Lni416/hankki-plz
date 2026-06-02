@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/util/ingredient_emoji.dart';
 import '../../models/ingredient.dart';
 
 class AddIngredientSheet extends StatefulWidget {
@@ -18,7 +19,6 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
   IngredientCategory _category = IngredientCategory.vegetable;
   String _unit = '개';
   DateTime _expiryDate = DateTime.now().add(const Duration(days: 7));
-  String _emoji = '🥦';
 
   static const _quickIngredients = [
     ('달걀', '🥚', IngredientCategory.dairy, '개'),
@@ -81,7 +81,6 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
                 onTap: () {
                   setState(() {
                     _nameCtrl.text = q.$1;
-                    _emoji = q.$2;
                     _category = q.$3;
                     _unit = q.$4;
                   });
@@ -192,15 +191,25 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
   }
 
   void _submit() {
-    if (_nameCtrl.text.trim().isEmpty) return;
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) return;
+    // 빠른 선택으로 고른 재료면 그 이모지를, 직접 입력한 경우엔
+    // 이름 기반 매핑으로 이모지를 결정한다 (기본값 고정 버그 방지).
+    String emoji = emojiForIngredient(name, _category);
+    for (final q in _quickIngredients) {
+      if (q.$1 == name) {
+        emoji = q.$2;
+        break;
+      }
+    }
     final ingredient = Ingredient(
       id: const Uuid().v4(),
-      name: _nameCtrl.text.trim(),
+      name: name,
       category: _category,
       quantity: double.tryParse(_qtyCtrl.text) ?? 1,
       unit: _unit,
       expiryDate: _expiryDate,
-      emoji: _emoji,
+      emoji: emoji,
     );
     widget.onAdd(ingredient);
     Navigator.pop(context);

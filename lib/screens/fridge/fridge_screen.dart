@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/util/ingredient_emoji.dart';
 import '../../models/ingredient.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/fridge_provider.dart';
@@ -333,7 +334,8 @@ class FridgeScreen extends ConsumerWidget {
                           unit: '개',
                           expiryDate: DateTime.now()
                               .add(const Duration(days: 7)),
-                          emoji: '🥬',
+                          emoji: emojiForIngredient(
+                              name, IngredientCategory.vegetable),
                         ));
                       }
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -488,7 +490,7 @@ class _IngredientTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(ingredient.emoji, style: const TextStyle(fontSize: 28)),
+            Text(ingredient.emoji, style: emojiStyle(28)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
