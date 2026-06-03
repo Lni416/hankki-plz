@@ -8,6 +8,7 @@ import '../../providers/recipe_provider.dart';
 import '../../providers/fridge_provider.dart';
 import '../../providers/favorite_provider.dart';
 import '../../widgets/difficulty_stars.dart';
+import '../learn/lesson_screen.dart';
 
 class RecipeDetailScreen extends ConsumerStatefulWidget {
   const RecipeDetailScreen({super.key});
@@ -447,10 +448,9 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('🎉 요리를 시작해 봐요!'),
-                    backgroundColor: AppColors.primary,
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const LessonScreen(),
                   ),
                 );
               },
