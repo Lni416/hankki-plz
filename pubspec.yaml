@@ -34,6 +34,7 @@ dependencies:
 
   # 카메라 / 미디어
   image_picker: ^1.1.0
+  shared_preferences: ^2.2.0
 
   # 유틸
   intl: ^0.19.0

@@ -21,27 +21,30 @@ class LoginScreen extends ConsumerWidget {
               const Spacer(flex: 2),
               // 로고 영역
               Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryDark],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text('👨‍🍳', style: TextStyle(fontSize: 52)),
-                ),
-              ).animate().fadeIn(duration: 500.ms).scale(
+                    child: const Center(
+                      child: Text('👨‍🍳', style: TextStyle(fontSize: 52)),
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 500.ms)
+                  .scale(
                     begin: const Offset(0.8, 0.8),
                     curve: Curves.elasticOut,
                   ),
@@ -91,9 +94,17 @@ class LoginScreen extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () =>
-                        ref.read(authNotifierProvider.notifier).signInWithGoogle(),
-                    icon: const Text('G', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF4285F4))),
+                    onPressed: () => ref
+                        .read(authNotifierProvider.notifier)
+                        .signInWithGoogle(),
+                    icon: const Text(
+                      'G',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF4285F4),
+                      ),
+                    ),
                     label: const Text(
                       'Google로 계속하기',
                       style: TextStyle(
@@ -104,9 +115,13 @@ class LoginScreen extends ConsumerWidget {
                     ),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      side: const BorderSide(color: AppColors.divider, width: 1.5),
+                      side: const BorderSide(
+                        color: AppColors.divider,
+                        width: 1.5,
+                      ),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                   ),
                 ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.1),
@@ -114,20 +129,24 @@ class LoginScreen extends ConsumerWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () =>
-                        ref.read(authNotifierProvider.notifier).signInAnonymously(),
+                    onPressed: () => ref
+                        .read(authNotifierProvider.notifier)
+                        .signInAnonymously(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 0,
                     ),
                     child: const Text(
                       '로그인 없이 둘러보기',
                       style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ).animate().fadeIn(delay: 660.ms).slideY(begin: 0.1),
@@ -136,8 +155,7 @@ class LoginScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text(
                   '로그인 실패: ${authAsync.error}',
-                  style: const TextStyle(
-                      color: AppColors.danger, fontSize: 13),
+                  style: const TextStyle(color: AppColors.danger, fontSize: 13),
                   textAlign: TextAlign.center,
                 ),
               ],
