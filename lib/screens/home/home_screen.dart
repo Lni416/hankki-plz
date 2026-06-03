@@ -19,8 +19,7 @@ class HomeScreen extends ConsumerWidget {
     final statsAsync = ref.watch(learnProvider);
     final stats = statsAsync.valueOrNull ?? const UserStats();
     final urgent = ref.watch(urgentIngredientsProvider);
-    final recipes = ref.watch(recommendedRecipesProvider);
-    final topRecipes = recipes.take(3).toList();
+    final topRecipes = ref.watch(topRecommendationsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,

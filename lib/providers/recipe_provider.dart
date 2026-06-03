@@ -19,7 +19,9 @@ final allRecipesProvider = FutureProvider<List<Recipe>>((ref) async {
   if (authAsync.isLoading) return [];
   if (authAsync.value == null) return mockRecipes;
   try {
-    return await FirestoreService.getAllRecipes();
+    final recipes = await FirestoreService.getAllRecipes();
+    // Firestore가 비어 있으면(시드 전) 목 데이터로 폴백 — 빈 화면 방지
+    return recipes.isEmpty ? mockRecipes : recipes;
   } catch (_) {
     return mockRecipes; // Firestore 오류 시 목 데이터 폴백
   }
@@ -84,13 +86,24 @@ final recommendedRecipesProvider = Provider<List<Recipe>>((ref) {
   }
 
   filtered.sort((a, b) {
+    // 1순위: 유통기한 임박 재료 사용 레시피
     if (a.hasUrgentIngredient != b.hasUrgentIngredient) {
       return a.hasUrgentIngredient ? -1 : 1;
     }
-    return b.matchRate.compareTo(a.matchRate);
+    // 2순위: 보유 재료 매칭률 높은 순
+    final byMatch = b.matchRate.compareTo(a.matchRate);
+    if (byMatch != 0) return byMatch;
+    // 3순위: 매칭률이 같으면 쉬운 난이도 먼저 (입문자 우선)
+    return a.difficulty.compareTo(b.difficulty);
   });
 
   return filtered;
+});
+
+/// 홈 화면 '오늘의 추천'에 노출할 최대 10개 추천 레시피
+final topRecommendationsProvider = Provider<List<Recipe>>((ref) {
+  final recommended = ref.watch(recommendedRecipesProvider);
+  return recommended.take(10).toList();
 });
 
 final selectedRecipeProvider = StateProvider<Recipe?>((ref) => null);

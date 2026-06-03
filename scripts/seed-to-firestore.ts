@@ -17,7 +17,10 @@ import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 
-const INPUT_FILE = path.join(__dirname, "../data/recipes-labeled.json");
+// 200개 생성 카탈로그(recipes-seed.json)가 있으면 우선 사용, 없으면 직접 작성본 사용
+const SEED_FILE = path.join(__dirname, "../data/recipes-seed.json");
+const LABELED_FILE = path.join(__dirname, "../data/recipes-labeled.json");
+const INPUT_FILE = fs.existsSync(SEED_FILE) ? SEED_FILE : LABELED_FILE;
 
 admin.initializeApp();
 const db = admin.firestore();

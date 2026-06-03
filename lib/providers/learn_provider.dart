@@ -20,7 +20,32 @@ class LearnNotifier extends AsyncNotifier<UserStats> {
     if (uid == null) {
       return const UserStats();
     }
-    return await FirestoreService.getUserStats(uid);
+    final stats = await FirestoreService.getUserStats(uid);
+    return _normalizeForToday(stats);
+  }
+
+  /// 날짜 경과에 따라 '오늘' 관련 상태를 보정한다.
+  ///
+  /// `todayCompleted`/`todayLessons`는 Firestore에 그대로 저장돼 있어,
+  /// 마지막 학습일이 오늘이 아니면 어제 완료한 값이 오늘도 '완료'로 보인다.
+  /// 마지막 학습일이 오늘이 아니면 오늘 진행도는 0으로, 이틀 이상 끊겼으면
+  /// 스트릭도 0으로 보정한다. (lastStudyDate 자체는 유지)
+  static UserStats _normalizeForToday(UserStats s) {
+    final last = s.lastStudyDate;
+    if (last == null) {
+      return s.copyWith(todayCompleted: false, todayLessons: 0, streak: 0);
+    }
+    final now = DateTime.now();
+    final lastDay = DateTime(last.year, last.month, last.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = today.difference(lastDay).inDays;
+    if (diff == 0) return s; // 오늘 이미 학습함 — 그대로
+    final streakBroken = diff >= 2; // 이틀 이상 끊김
+    return s.copyWith(
+      todayCompleted: false,
+      todayLessons: 0,
+      streak: streakBroken ? 0 : s.streak,
+    );
   }
 
   Future<void> completeLesson(int xpEarned) async {
