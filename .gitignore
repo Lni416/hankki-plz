@@ -73,3 +73,6 @@ data/
 *serviceAccount*.json
 *firebase-adminsdk*.json
 .firebase/
+
+# TFLite 모델 파일 (용량 크므로 git 추적 제외, scripts/download_yolo_model.sh 로 다운로드)
+assets/models/*.tflite

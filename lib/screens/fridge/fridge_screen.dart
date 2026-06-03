@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -12,6 +13,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/fridge_provider.dart';
 import '../../services/cloud_functions_service.dart';
 import 'add_ingredient_sheet.dart';
+import 'camera_recognition_screen.dart';
 
 class FridgeScreen extends ConsumerWidget {
   const FridgeScreen({super.key});
@@ -129,8 +131,9 @@ class FridgeScreen extends ConsumerWidget {
   }
 
   Future<void> _showAnalyzeSheet(BuildContext context, WidgetRef ref) async {
-    // 이미지 소스 선택
-    final source = await showModalBottomSheet<ImageSource>(
+    // 모바일: 카메라 촬영 vs 갤러리 선택
+    // 웹: image_picker only (카메라 미지원)
+    final source = await showModalBottomSheet<_RecognizeSource>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
@@ -143,8 +146,7 @@ class FridgeScreen extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40,
-              height: 4,
+              width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
                 color: AppColors.divider,
@@ -156,27 +158,32 @@ class FridgeScreen extends ConsumerWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Gemini AI가 사진에서 식재료를 자동으로 찾아드려요',
+            Text(
+              kIsWeb
+                  ? 'Gemini AI가 사진에서 식재료를 찾아드려요'
+                  : 'YOLOv8 + Gemini AI가 식재료를 자동으로 찾아드려요',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 20),
             Row(
               children: [
+                // 카메라 촬영: 모바일=실시간 YOLO 화면, 웹=image_picker camera
                 Expanded(
                   child: _SourceButton(
                     icon: Icons.camera_alt_outlined,
                     label: '카메라 촬영',
-                    onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                    badge: kIsWeb ? null : 'YOLO',
+                    onTap: () => Navigator.pop(ctx, _RecognizeSource.camera),
                   ),
                 ),
                 const SizedBox(width: 12),
+                // 갤러리: 항상 image_picker gallery
                 Expanded(
                   child: _SourceButton(
                     icon: Icons.photo_library_outlined,
                     label: '갤러리 선택',
-                    onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                    onTap: () => Navigator.pop(ctx, _RecognizeSource.gallery),
                   ),
                 ),
               ],
@@ -188,27 +195,35 @@ class FridgeScreen extends ConsumerWidget {
 
     if (source == null || !context.mounted) return;
 
+    // 모바일 카메라 → 실시간 YOLO 화면으로 이동
+    if (source == _RecognizeSource.camera && !kIsWeb) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const CameraRecognitionScreen()),
+      );
+      return;
+    }
+
+    // 갤러리 또는 웹 카메라 → image_picker 사용
     final picker = ImagePicker();
     final xFile = await picker.pickImage(
-      source: source,
+      source: source == _RecognizeSource.camera
+          ? ImageSource.camera
+          : ImageSource.gallery,
       maxWidth: 1024,
       maxHeight: 1024,
       imageQuality: 85,
     );
     if (xFile == null || !context.mounted) return;
 
-    // Firebase 미설정 시 시뮬레이션 모드
+    // Firebase 미설정 시 시뮬레이션
     final firebaseAvailable = ref.read(firebaseAvailableProvider);
     if (!firebaseAvailable) {
-      _showRecognizedIngredients(context, ref, [
-        '달걀',
-        '당근',
-        '대파',
-      ], simulated: true);
+      _showRecognizedIngredients(context, ref, ['달걀', '당근', '대파'], simulated: true);
       return;
     }
 
-    // 로딩 다이얼로그
+    // Gemini Vision 인식
+    if (!context.mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -234,11 +249,11 @@ class FridgeScreen extends ConsumerWidget {
         File(xFile.path),
       );
       if (!context.mounted) return;
-      Navigator.pop(context); // 로딩 닫기
+      Navigator.pop(context);
       _showRecognizedIngredients(context, ref, ingredients);
     } catch (e) {
       if (!context.mounted) return;
-      Navigator.pop(context); // 로딩 닫기
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('인식 실패: $e'), backgroundColor: AppColors.danger),
       );
@@ -369,15 +384,19 @@ class FridgeScreen extends ConsumerWidget {
   }
 }
 
+enum _RecognizeSource { camera, gallery }
+
 class _SourceButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? badge;
   final VoidCallback onTap;
 
   const _SourceButton({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.badge,
   });
 
   @override
@@ -393,7 +412,32 @@ class _SourceButton extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(icon, size: 28, color: AppColors.primary),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(icon, size: 28, color: AppColors.primary),
+                if (badge != null)
+                  Positioned(
+                    top: -6,
+                    right: -18,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        badge!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             const SizedBox(height: 8),
             Text(
               label,
