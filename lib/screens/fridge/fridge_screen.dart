@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/util/ingredient_category_resolver.dart';
 import '../../core/util/ingredient_emoji.dart';
 import '../../models/ingredient.dart';
 import '../../providers/auth_provider.dart';
@@ -27,12 +28,17 @@ class FridgeScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 8),
             child: TextButton.icon(
               onPressed: () => _showAnalyzeSheet(context, ref),
-              icon: const Icon(Icons.camera_alt_outlined,
-                  size: 18, color: AppColors.primary),
+              icon: const Icon(
+                Icons.camera_alt_outlined,
+                size: 18,
+                color: AppColors.primary,
+              ),
               label: const Text(
                 '카메라 인식',
-                style:
-                    TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -43,7 +49,10 @@ class FridgeScreen extends ConsumerWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('재료 추가', style: TextStyle(fontWeight: FontWeight.w600)),
+        label: const Text(
+          '재료 추가',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
       body: ingredientsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -65,8 +74,9 @@ class FridgeScreen extends ConsumerWidget {
                       category: category,
                       items: items,
                       sectionIndex: index,
-                      onDelete: (id) =>
-                          ref.read(fridgeProvider.notifier).removeIngredient(id),
+                      onDelete: (id) => ref
+                          .read(fridgeProvider.notifier)
+                          .removeIngredient(id),
                     );
                   },
                 );
@@ -190,12 +200,11 @@ class FridgeScreen extends ConsumerWidget {
     // Firebase 미설정 시 시뮬레이션 모드
     final firebaseAvailable = ref.read(firebaseAvailableProvider);
     if (!firebaseAvailable) {
-      _showRecognizedIngredients(
-        context,
-        ref,
-        ['달걀', '당근', '대파'],
-        simulated: true,
-      );
+      _showRecognizedIngredients(context, ref, [
+        '달걀',
+        '당근',
+        '대파',
+      ], simulated: true);
       return;
     }
 
@@ -221,8 +230,9 @@ class FridgeScreen extends ConsumerWidget {
     );
 
     try {
-      final ingredients =
-          await CloudFunctionsService.recognizeIngredients(File(xFile.path));
+      final ingredients = await CloudFunctionsService.recognizeIngredients(
+        File(xFile.path),
+      );
       if (!context.mounted) return;
       Navigator.pop(context); // 로딩 닫기
       _showRecognizedIngredients(context, ref, ingredients);
@@ -230,10 +240,7 @@ class FridgeScreen extends ConsumerWidget {
       if (!context.mounted) return;
       Navigator.pop(context); // 로딩 닫기
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('인식 실패: $e'),
-          backgroundColor: AppColors.danger,
-        ),
+        SnackBar(content: Text('인식 실패: $e'), backgroundColor: AppColors.danger),
       );
     }
   }
@@ -250,7 +257,9 @@ class FridgeScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Text(simulated ? '🤖 인식 결과 (시뮬레이션)' : '🤖 인식된 재료'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -271,8 +280,7 @@ class FridgeScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               const Text(
                 '냉장고에 추가할 재료를 선택하세요',
-                style: TextStyle(
-                    fontSize: 13, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -291,7 +299,9 @@ class FridgeScreen extends ConsumerWidget {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppColors.primary
@@ -326,22 +336,26 @@ class FridgeScreen extends ConsumerWidget {
                       Navigator.pop(ctx);
                       final notifier = ref.read(fridgeProvider.notifier);
                       for (final name in selected) {
-                        notifier.addIngredient(Ingredient(
-                          id: const Uuid().v4(),
-                          name: name,
-                          category: IngredientCategory.vegetable,
-                          quantity: 1,
-                          unit: '개',
-                          expiryDate: DateTime.now()
-                              .add(const Duration(days: 7)),
-                          emoji: emojiForIngredient(
-                              name, IngredientCategory.vegetable),
-                        ));
+                        final category = categoryForIngredient(name);
+                        notifier.addIngredient(
+                          Ingredient(
+                            id: const Uuid().v4(),
+                            name: name,
+                            category: category,
+                            quantity: 1,
+                            unit: '개',
+                            expiryDate: DateTime.now().add(
+                              const Duration(days: 7),
+                            ),
+                            emoji: emojiForIngredient(name, category),
+                          ),
+                        );
                       }
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
-                              '${selected.length}개 재료를 냉장고에 추가했어요 🧊'),
+                            '${selected.length}개 재료를 냉장고에 추가했어요 🧊',
+                          ),
                           backgroundColor: AppColors.secondary,
                         ),
                       );
@@ -381,9 +395,10 @@ class _SourceButton extends StatelessWidget {
           children: [
             Icon(icon, size: 28, color: AppColors.primary),
             const SizedBox(height: 8),
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       ),
@@ -426,24 +441,21 @@ class _CategorySection extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 '${items.length}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textHint,
-                ),
+                style: const TextStyle(fontSize: 12, color: AppColors.textHint),
               ),
             ],
           ),
         ),
         ...items.asMap().entries.map(
-              (e) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _IngredientTile(
-                  ingredient: e.value,
-                  index: sectionIndex * 10 + e.key,
-                  onDelete: onDelete,
-                ),
-              ),
+          (e) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _IngredientTile(
+              ingredient: e.value,
+              index: sectionIndex * 10 + e.key,
+              onDelete: onDelete,
             ),
+          ),
+        ),
       ],
     );
   }
@@ -463,75 +475,78 @@ class _IngredientTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dismissible(
-      key: Key(ingredient.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        decoration: BoxDecoration(
-          color: AppColors.danger,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete_outline, color: Colors.white),
-      ),
-      onDismissed: (_) => onDelete(ingredient.id),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: ingredient.isExpired
-                ? AppColors.danger.withOpacity(0.4)
-                : ingredient.isUrgent
+          key: Key(ingredient.id),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            decoration: BoxDecoration(
+              color: AppColors.danger,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20),
+            child: const Icon(Icons.delete_outline, color: Colors.white),
+          ),
+          onDismissed: (_) => onDelete(ingredient.id),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: ingredient.isExpired
+                    ? AppColors.danger.withOpacity(0.4)
+                    : ingredient.isUrgent
                     ? AppColors.warning.withOpacity(0.4)
                     : AppColors.divider,
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(ingredient.emoji, style: emojiStyle(28)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ingredient.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '${ingredient.quantity.toStringAsFixed(ingredient.quantity == ingredient.quantity.roundToDouble() ? 0 : 1)} ${ingredient.unit}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: ingredient.expiryColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                ingredient.expiryLabel,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: ingredient.expiryColor,
+            child: Row(
+              children: [
+                Text(ingredient.emoji, style: emojiStyle(28)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ingredient.name,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        '${ingredient.quantity.toStringAsFixed(ingredient.quantity == ingredient.quantity.roundToDouble() ? 0 : 1)} ${ingredient.unit}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: ingredient.expiryColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    ingredient.expiryLabel,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: ingredient.expiryColor,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    )
+          ),
+        )
         .animate(delay: Duration(milliseconds: 30 * index))
         .fadeIn()
         .slideX(begin: 0.05);

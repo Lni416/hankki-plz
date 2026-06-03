@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/util/ingredient_category_resolver.dart';
 import '../../core/util/ingredient_emoji.dart';
 import '../../models/ingredient.dart';
 
@@ -14,11 +16,7 @@ class AddIngredientSheet extends StatefulWidget {
 }
 
 class _AddIngredientSheetState extends State<AddIngredientSheet> {
-  final _nameCtrl = TextEditingController();
-  final _qtyCtrl = TextEditingController(text: '1');
-  IngredientCategory _category = IngredientCategory.vegetable;
-  String _unit = '개';
-  DateTime _expiryDate = DateTime.now().add(const Duration(days: 7));
+  static const _recentIngredientsKey = 'recent_ingredients';
 
   static const _quickIngredients = [
     ('달걀', '🥚', IngredientCategory.dairy, '개'),
@@ -30,6 +28,60 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
     ('닭가슴살', '🍗', IngredientCategory.meat, 'g'),
     ('김치', '🥬', IngredientCategory.processed, 'g'),
   ];
+
+  final _nameCtrl = TextEditingController();
+  final _qtyCtrl = TextEditingController(text: '1');
+  IngredientCategory? _selectedCategory;
+  String _unit = '개';
+  DateTime _expiryDate = DateTime.now().add(const Duration(days: 7));
+  List<String> _recentIngredients = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecentIngredients();
+  }
+
+  Future<void> _loadRecentIngredients() async {
+    final prefs = await SharedPreferences.getInstance();
+    final recent = prefs.getStringList(_recentIngredientsKey) ?? [];
+    if (mounted) {
+      setState(() {
+        _recentIngredients = recent;
+      });
+    }
+  }
+
+  Future<void> _rememberRecentIngredient(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final recent = prefs.getStringList(_recentIngredientsKey) ?? [];
+    recent.remove(trimmed);
+    recent.insert(0, trimmed);
+    if (recent.length > 6) {
+      recent.removeRange(6, recent.length);
+    }
+    await prefs.setStringList(_recentIngredientsKey, recent);
+    if (mounted) {
+      setState(() {
+        _recentIngredients = recent;
+      });
+    }
+  }
+
+  Future<void> _removeRecentIngredient(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    final recent = prefs.getStringList(_recentIngredientsKey) ?? [];
+    recent.removeWhere((e) => e == name);
+    await prefs.setStringList(_recentIngredientsKey, recent);
+    if (mounted) {
+      setState(() {
+        _recentIngredients = recent;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -67,54 +119,104 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 16),
-          const Text('빠른 선택',
+          if (_recentIngredients.isNotEmpty) ...[
+            const Text(
+              '최근 추가한 재료',
               style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _quickIngredients.map((q) {
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _nameCtrl.text = q.$1;
-                    _category = q.$3;
-                    _unit = q.$4;
-                  });
-                },
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _nameCtrl.text == q.$1
-                        ? AppColors.primary.withOpacity(0.1)
-                        : AppColors.cardBg,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: _nameCtrl.text == q.$1
-                          ? AppColors.primary
-                          : Colors.transparent,
-                    ),
-                  ),
-                  child: Text(
-                    '${q.$2} ${q.$1}',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _recentIngredients.map((ingredient) {
+                return InputChip(
+                  label: Text(
+                    ingredient,
                     style: TextStyle(
                       fontSize: 13,
-                      color: _nameCtrl.text == q.$1
+                      color: _nameCtrl.text == ingredient
                           ? AppColors.primary
                           : AppColors.textPrimary,
-                      fontWeight: _nameCtrl.text == q.$1
+                      fontWeight: _nameCtrl.text == ingredient
                           ? FontWeight.w600
                           : FontWeight.normal,
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
+                  onPressed: () {
+                    setState(() {
+                      _nameCtrl.text = ingredient;
+                    });
+                  },
+                  onDeleted: () => _removeRecentIngredient(ingredient),
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                  backgroundColor: _nameCtrl.text == ingredient
+                      ? AppColors.primary.withValues(alpha: 0.1)
+                      : AppColors.cardBg,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                );
+              }).toList(),
+            ),
+          ] else ...[
+            const Text(
+              '빠른 선택',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _quickIngredients.map((q) {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _nameCtrl.text = q.$1;
+                      _selectedCategory = q.$3;
+                      _unit = q.$4;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _nameCtrl.text == q.$1
+                          ? AppColors.primary.withValues(alpha: 0.1)
+                          : AppColors.cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _nameCtrl.text == q.$1
+                            ? AppColors.primary
+                            : Colors.transparent,
+                      ),
+                    ),
+                    child: Text(
+                      '${q.$2} ${q.$1}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _nameCtrl.text == q.$1
+                            ? AppColors.primary
+                            : AppColors.textPrimary,
+                        fontWeight: _nameCtrl.text == q.$1
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
           const SizedBox(height: 16),
           TextField(
             controller: _nameCtrl,
@@ -136,16 +238,41 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _unit,
-                  decoration:
-                      const InputDecoration(hintText: '단위'),
+                  initialValue: _unit,
+                  decoration: const InputDecoration(hintText: '단위'),
                   items: ['개', 'g', 'ml', '단', '모', '봉', '공기', '큰술']
                       .map((u) => DropdownMenuItem(value: u, child: Text(u)))
                       .toList(),
-                  onChanged: (v) => setState(() => _unit = v!),
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => _unit = v);
+                    }
+                  },
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<IngredientCategory>(
+            initialValue: _selectedCategory,
+            decoration: const InputDecoration(hintText: '카테고리'),
+            items: IngredientCategory.values
+                .map(
+                  (category) => DropdownMenuItem(
+                    value: category,
+                    child: Row(
+                      children: [
+                        Icon(category.icon, size: 18),
+                        const SizedBox(width: 8),
+                        Text(category.label),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: (category) {
+              setState(() => _selectedCategory = category);
+            },
           ),
           const SizedBox(height: 12),
           GestureDetector(
@@ -166,8 +293,11 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today_outlined,
-                      size: 18, color: AppColors.primary),
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(width: 10),
                   Text(
                     '유통기한: ${_expiryDate.year}.${_expiryDate.month.toString().padLeft(2, '0')}.${_expiryDate.day.toString().padLeft(2, '0')}',
@@ -193,25 +323,19 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
   void _submit() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) return;
-    // 빠른 선택으로 고른 재료면 그 이모지를, 직접 입력한 경우엔
-    // 이름 기반 매핑으로 이모지를 결정한다 (기본값 고정 버그 방지).
-    String emoji = emojiForIngredient(name, _category);
-    for (final q in _quickIngredients) {
-      if (q.$1 == name) {
-        emoji = q.$2;
-        break;
-      }
-    }
+    final category = _selectedCategory ?? categoryForIngredient(name);
+
     final ingredient = Ingredient(
       id: const Uuid().v4(),
       name: name,
-      category: _category,
+      category: category,
       quantity: double.tryParse(_qtyCtrl.text) ?? 1,
       unit: _unit,
       expiryDate: _expiryDate,
-      emoji: emoji,
+      emoji: emojiForIngredient(name, category),
     );
     widget.onAdd(ingredient);
+    _rememberRecentIngredient(name);
     Navigator.pop(context);
   }
 }
