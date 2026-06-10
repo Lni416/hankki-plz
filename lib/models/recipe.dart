@@ -1,30 +1,52 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// 재료 중요도 — core: 이것만 있으면 OK / recommended: 있으면 더 좋음 / optional: 선택
+enum IngredientImportance { core, recommended, optional }
+
 class RecipeIngredient {
   final String name;
   final double amount;
   final String unit;
-  final bool isOptional;
+  final IngredientImportance importance;
 
   const RecipeIngredient({
     required this.name,
     required this.amount,
     required this.unit,
-    this.isOptional = false,
+    this.importance = IngredientImportance.core,
   });
 
-  factory RecipeIngredient.fromMap(Map<String, dynamic> map) => RecipeIngredient(
-        name: map['name'] as String,
-        amount: (map['amount'] as num).toDouble(),
-        unit: map['unit'] as String,
-        isOptional: map['isOptional'] as bool? ?? false,
+  /// 하위호환 — 기존 코드의 isOptional 사용처 유지
+  bool get isOptional => importance == IngredientImportance.optional;
+
+  factory RecipeIngredient.fromMap(Map<String, dynamic> map) {
+    // importance 문자열이 있으면 우선, 없으면 기존 isOptional 기반 (구문서 호환)
+    final importanceStr = map['importance'] as String?;
+    final IngredientImportance importance;
+    if (importanceStr != null) {
+      importance = IngredientImportance.values.firstWhere(
+        (v) => v.name == importanceStr,
+        orElse: () => IngredientImportance.core,
       );
+    } else {
+      importance = (map['isOptional'] as bool? ?? false)
+          ? IngredientImportance.optional
+          : IngredientImportance.core;
+    }
+    return RecipeIngredient(
+      name: map['name'] as String,
+      amount: (map['amount'] as num).toDouble(),
+      unit: map['unit'] as String,
+      importance: importance,
+    );
+  }
 
   Map<String, dynamic> toMap() => {
         'name': name,
         'amount': amount,
         'unit': unit,
-        'isOptional': isOptional,
+        'importance': importance.name,
+        'isOptional': isOptional, // 구버전 호환용 동시 기록
       };
 }
 

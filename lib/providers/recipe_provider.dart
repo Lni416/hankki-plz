@@ -4,6 +4,10 @@ import '../models/mock_data.dart';
 import '../services/firestore_service.dart';
 import 'fridge_provider.dart';
 import 'auth_provider.dart';
+import 'preference_provider.dart';
+
+/// 개인화 점수 가중치 — matchRate(1-w) : personalScore(w)
+const _personalWeight = 0.25;
 
 final selectedDifficultyProvider = StateProvider<int?>((ref) => null);
 final searchQueryProvider = StateProvider<String>((ref) => '');
@@ -34,6 +38,7 @@ final recommendedRecipesProvider = Provider<List<Recipe>>((ref) {
   final allRecipes = allRecipesAsync.valueOrNull ?? mockRecipes;
   final selectedDiff = ref.watch(selectedDifficultyProvider);
   final query = ref.watch(searchQueryProvider);
+  final preference = ref.watch(userPreferenceProvider);
 
   final fridgeNames = fridge.map((i) => i.name.toLowerCase()).toSet();
   final urgentNames = fridge
@@ -45,8 +50,10 @@ final recommendedRecipesProvider = Provider<List<Recipe>>((ref) {
   // (learnProvider 순환참조 방지 위해 별도 provider로 분리)
 
   final scored = allRecipes.map((recipe) {
-    final requiredIngredients =
-        recipe.ingredients.where((i) => !i.isOptional).toList();
+    // 필수 = core 재료만. recommended/optional은 "있으면 더 좋은" 재료라 매칭률에서 제외
+    final requiredIngredients = recipe.ingredients
+        .where((i) => i.importance == IngredientImportance.core)
+        .toList();
     final total = requiredIngredients.length;
 
     bool isOwned(RecipeIngredient ri) {
@@ -94,15 +101,25 @@ final recommendedRecipesProvider = Provider<List<Recipe>>((ref) {
     }).toList();
   }
 
+  // 개인화 점수 (provider 내부 계산 — Recipe 모델 비저장)
+  // 콜드 스타트(신호 3건 미만)면 전부 0 → 기존 정렬과 100% 동일
+  final personalScores = <String, double>{
+    for (final r in filtered) r.id: preference.scoreFor(r),
+  };
+
+  double combined(Recipe r) =>
+      r.matchRate * (1 - _personalWeight) +
+      (personalScores[r.id] ?? 0.0) * _personalWeight;
+
   filtered.sort((a, b) {
-    // 1순위: 유통기한 임박 재료 사용 레시피
+    // 1순위: 유통기한 임박 재료 사용 레시피 (음식물 낭비 방지 — 개인화로 희석 안 함)
     if (a.hasUrgentIngredient != b.hasUrgentIngredient) {
       return a.hasUrgentIngredient ? -1 : 1;
     }
-    // 2순위: 보유 재료 매칭률 높은 순
-    final byMatch = b.matchRate.compareTo(a.matchRate);
-    if (byMatch != 0) return byMatch;
-    // 3순위: 매칭률이 같으면 쉬운 난이도 먼저 (입문자 우선)
+    // 2순위: 보유 재료 매칭률 + 개인 취향 가중 합산
+    final byScore = combined(b).compareTo(combined(a));
+    if (byScore != 0) return byScore;
+    // 3순위: 점수가 같으면 쉬운 난이도 먼저 (입문자 우선)
     return a.difficulty.compareTo(b.difficulty);
   });
 

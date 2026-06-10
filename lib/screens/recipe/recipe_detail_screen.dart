@@ -244,7 +244,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
         ),
         const SizedBox(height: 10),
         ...recipe.ingredients
-            .where((i) => !i.isOptional)
+            .where((i) => i.importance == IngredientImportance.core)
             .toList()
             .asMap()
             .entries
@@ -255,7 +255,35 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
                       fn.contains(e.value.name.toLowerCase()) ||
                       e.value.name.toLowerCase().contains(fn)),
                 )),
-        if (recipe.ingredients.any((i) => i.isOptional)) ...[
+        if (recipe.ingredients
+            .any((i) => i.importance == IngredientImportance.recommended)) ...[
+          const SizedBox(height: 16),
+          const Row(
+            children: [
+              Icon(Icons.star_rounded, size: 16, color: AppColors.warning),
+              SizedBox(width: 4),
+              Text(
+                '있으면 더 좋아요',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.warning),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...recipe.ingredients
+              .where((i) => i.importance == IngredientImportance.recommended)
+              .map((ri) => _IngredientRow(
+                    ri: ri,
+                    index: 0,
+                    owned: fridgeNames.any((fn) =>
+                        fn.contains(ri.name.toLowerCase()) ||
+                        ri.name.toLowerCase().contains(fn)),
+                  )),
+        ],
+        if (recipe.ingredients
+            .any((i) => i.importance == IngredientImportance.optional)) ...[
           const SizedBox(height: 16),
           const Text(
             '선택 재료',
@@ -266,7 +294,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
           ),
           const SizedBox(height: 10),
           ...recipe.ingredients
-              .where((i) => i.isOptional)
+              .where((i) => i.importance == IngredientImportance.optional)
               .map((ri) => _IngredientRow(
                     ri: ri,
                     index: 0,

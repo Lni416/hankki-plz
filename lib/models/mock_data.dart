@@ -114,7 +114,7 @@ final mockRecipes = [
       const RecipeIngredient(name: '대파', amount: 0.5, unit: '대'),
       const RecipeIngredient(name: '간장', amount: 1, unit: '큰술'),
       const RecipeIngredient(name: '참기름', amount: 0.5, unit: '큰술'),
-      const RecipeIngredient(name: '당근', amount: 0.5, unit: '개', isOptional: true),
+      const RecipeIngredient(name: '당근', amount: 0.5, unit: '개', importance: IngredientImportance.optional),
     ],
     steps: [
       const RecipeStep(
@@ -222,7 +222,7 @@ final mockRecipes = [
       const RecipeIngredient(name: '올리브유', amount: 2, unit: '큰술'),
       const RecipeIngredient(name: '설탕', amount: 1, unit: '작은술'),
       const RecipeIngredient(name: '소금', amount: 0.5, unit: '작은술'),
-      const RecipeIngredient(name: '파슬리', amount: 1, unit: '줌', isOptional: true),
+      const RecipeIngredient(name: '파슬리', amount: 1, unit: '줌', importance: IngredientImportance.optional),
     ],
     steps: [
       const RecipeStep(

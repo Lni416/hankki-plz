@@ -173,24 +173,26 @@ STEP_TEMPLATES = {
 }
 
 # 조리법별 기본 양념(부재료)
+# 4번째 요소 = 중요도: "core"(필수) / "recommended"(있으면 더 좋음) / "optional"(선택)
+# 예) 볶음밥은 식용유만 있어도 만들 수 있고, 간장·마늘이 있으면 더 맛있다
 METHOD_SEASONING = {
-    "볶음": [("다진 마늘", 1, "큰술"), ("간장", 1, "큰술"), ("식용유", 1, "큰술"), ("후추", 1, "꼬집", True)],
-    "찌개": [("고추장", 1, "큰술"), ("다진 마늘", 1, "큰술"), ("대파", 0.5, "대"), ("두부", 0.5, "모", True)],
-    "국": [("국간장", 1, "큰술"), ("다진 마늘", 1, "큰술"), ("대파", 0.5, "대"), ("소금", 1, "꼬집")],
-    "탕": [("대파", 1, "대"), ("다진 마늘", 1, "큰술"), ("소금", 1, "꼬집"), ("후추", 1, "꼬집")],
-    "구이": [("소금", 1, "꼬집"), ("후추", 1, "꼬집"), ("식용유", 1, "큰술")],
-    "조림": [("간장", 2, "큰술"), ("설탕", 1, "큰술"), ("다진 마늘", 1, "큰술"), ("물엿", 1, "큰술", True)],
-    "무침": [("소금", 1, "꼬집"), ("다진 마늘", 0.5, "큰술"), ("참기름", 1, "큰술"), ("깨", 1, "작은술")],
-    "전": [("부침가루", 1, "컵"), ("달걀", 1, "개"), ("식용유", 3, "큰술")],
-    "면": [("간장", 1, "큰술"), ("참기름", 1, "큰술"), ("깨", 1, "작은술"), ("김가루", 1, "큰술", True)],
-    "밥": [("간장", 1, "큰술"), ("식용유", 1, "큰술"), ("참기름", 1, "작은술"), ("깨", 1, "작은술")],
-    "비빔": [("고추장", 1.5, "큰술"), ("참기름", 1, "큰술"), ("깨", 1, "작은술"), ("달걀", 1, "개")],
-    "덮밥": [("간장", 1.5, "큰술"), ("설탕", 0.5, "큰술"), ("다진 마늘", 0.5, "큰술"), ("밥", 1, "공기")],
-    "찜": [("간장", 2, "큰술"), ("고춧가루", 1, "큰술"), ("다진 마늘", 1, "큰술"), ("대파", 1, "대")],
-    "튀김": [("튀김가루", 1, "컵"), ("식용유", 3, "컵"), ("소금", 1, "꼬집")],
-    "죽": [("참기름", 1, "큰술"), ("소금", 1, "꼬집"), ("물", 4, "컵")],
-    "샐러드": [("올리브유", 1, "큰술"), ("소금", 1, "꼬집"), ("후추", 1, "꼬집")],
-    "분식": [("고추장", 1, "큰술"), ("고춧가루", 1, "큰술"), ("설탕", 1, "큰술"), ("대파", 0.5, "대")],
+    "볶음": [("식용유", 1, "큰술", "core"), ("간장", 1, "큰술", "recommended"), ("다진 마늘", 1, "큰술", "recommended"), ("후추", 1, "꼬집", "optional")],
+    "찌개": [("고추장", 1, "큰술", "core"), ("다진 마늘", 1, "큰술", "recommended"), ("대파", 0.5, "대", "recommended"), ("두부", 0.5, "모", "optional")],
+    "국": [("국간장", 1, "큰술", "core"), ("소금", 1, "꼬집", "recommended"), ("다진 마늘", 1, "큰술", "recommended"), ("대파", 0.5, "대", "recommended")],
+    "탕": [("소금", 1, "꼬집", "core"), ("대파", 1, "대", "recommended"), ("다진 마늘", 1, "큰술", "recommended"), ("후추", 1, "꼬집", "optional")],
+    "구이": [("소금", 1, "꼬집", "core"), ("식용유", 1, "큰술", "core"), ("후추", 1, "꼬집", "optional")],
+    "조림": [("간장", 2, "큰술", "core"), ("설탕", 1, "큰술", "recommended"), ("다진 마늘", 1, "큰술", "recommended"), ("물엿", 1, "큰술", "optional")],
+    "무침": [("소금", 1, "꼬집", "core"), ("참기름", 1, "큰술", "recommended"), ("다진 마늘", 0.5, "큰술", "recommended"), ("깨", 1, "작은술", "optional")],
+    "전": [("부침가루", 1, "컵", "core"), ("달걀", 1, "개", "core"), ("식용유", 3, "큰술", "core")],
+    "면": [("간장", 1, "큰술", "core"), ("참기름", 1, "큰술", "recommended"), ("깨", 1, "작은술", "optional"), ("김가루", 1, "큰술", "optional")],
+    "밥": [("식용유", 1, "큰술", "core"), ("간장", 1, "큰술", "recommended"), ("참기름", 1, "작은술", "recommended"), ("깨", 1, "작은술", "optional")],
+    "비빔": [("고추장", 1.5, "큰술", "core"), ("참기름", 1, "큰술", "recommended"), ("달걀", 1, "개", "recommended"), ("깨", 1, "작은술", "optional")],
+    "덮밥": [("밥", 1, "공기", "core"), ("간장", 1.5, "큰술", "core"), ("설탕", 0.5, "큰술", "recommended"), ("다진 마늘", 0.5, "큰술", "recommended")],
+    "찜": [("간장", 2, "큰술", "core"), ("고춧가루", 1, "큰술", "recommended"), ("다진 마늘", 1, "큰술", "recommended"), ("대파", 1, "대", "recommended")],
+    "튀김": [("튀김가루", 1, "컵", "core"), ("식용유", 3, "컵", "core"), ("소금", 1, "꼬집", "recommended")],
+    "죽": [("물", 4, "컵", "core"), ("소금", 1, "꼬집", "core"), ("참기름", 1, "큰술", "recommended")],
+    "샐러드": [("올리브유", 1, "큰술", "core"), ("소금", 1, "꼬집", "recommended"), ("후추", 1, "꼬집", "optional")],
+    "분식": [("고추장", 1, "큰술", "core"), ("설탕", 1, "큰술", "recommended"), ("고춧가루", 1, "큰술", "recommended"), ("대파", 0.5, "대", "optional")],
 }
 
 # 카테고리별 영양 추정 (1인분 기준 베이스)
@@ -213,8 +215,19 @@ TAGS_BY_METHOD = {
 }
 
 
-def ing(name, amount, unit, optional=False):
-    return {"name": name, "amount": amount, "unit": unit, "isOptional": optional}
+def ing(name, amount, unit, importance="core"):
+    # 하위호환: 카탈로그 주재료 튜플의 bool True → optional
+    if importance is True:
+        importance = "optional"
+    elif importance is False or importance is None:
+        importance = "core"
+    return {
+        "name": name,
+        "amount": amount,
+        "unit": unit,
+        "importance": importance,
+        "isOptional": importance == "optional",  # 구버전 앱 호환
+    }
 
 
 def build_recipe(title, emoji, main_ings, method, difficulty, time, servings,
@@ -235,13 +248,13 @@ def build_recipe(title, emoji, main_ings, method, difficulty, time, servings,
     existing = {m["name"] for m in mains}
     for s in METHOD_SEASONING.get(method, []):
         if len(s) == 4:
-            nm, am, un, opt = s
+            nm, am, un, imp = s
         else:
             nm, am, un = s
-            opt = False
+            imp = "core"
         if nm in existing:
             continue
-        seasonings.append(ing(nm, am, un, opt))
+        seasonings.append(ing(nm, am, un, imp))
         existing.add(nm)
 
     ingredients = mains + seasonings
