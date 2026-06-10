@@ -392,7 +392,10 @@ class _RecipeCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  MatchRateBar(rate: recipe.matchRate),
+                  MatchRateBar(
+                    matched: recipe.matchedCount,
+                    total: recipe.totalRequired,
+                  ),
                 ],
               ),
             ),

@@ -104,6 +104,9 @@ class Recipe {
   // 보유 재료 기반 계산값 — 불변 필드, copyWith으로만 생성
   final double matchRate;
   final bool hasUrgentIngredient;
+  final int matchedCount; // 보유 중인 필수재료 수
+  final int totalRequired; // 전체 필수재료 수
+  final List<String> missingIngredients; // 부족한 필수재료 이름
 
   const Recipe({
     required this.id,
@@ -121,12 +124,18 @@ class Recipe {
     this.thumbnailUrl,
     this.matchRate = 0.0,
     this.hasUrgentIngredient = false,
+    this.matchedCount = 0,
+    this.totalRequired = 0,
+    this.missingIngredients = const [],
   });
 
   Recipe copyWith({
     double? matchRate,
     bool? hasUrgentIngredient,
     String? thumbnailUrl,
+    int? matchedCount,
+    int? totalRequired,
+    List<String>? missingIngredients,
   }) =>
       Recipe(
         id: id,
@@ -144,6 +153,9 @@ class Recipe {
         thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
         matchRate: matchRate ?? this.matchRate,
         hasUrgentIngredient: hasUrgentIngredient ?? this.hasUrgentIngredient,
+        matchedCount: matchedCount ?? this.matchedCount,
+        totalRequired: totalRequired ?? this.totalRequired,
+        missingIngredients: missingIngredients ?? this.missingIngredients,
       );
 
   String get difficultyLabel {

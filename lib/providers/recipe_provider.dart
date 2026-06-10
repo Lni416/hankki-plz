@@ -49,11 +49,17 @@ final recommendedRecipesProvider = Provider<List<Recipe>>((ref) {
         recipe.ingredients.where((i) => !i.isOptional).toList();
     final total = requiredIngredients.length;
 
-    final matched = requiredIngredients.where((ri) {
+    bool isOwned(RecipeIngredient ri) {
       final riName = ri.name.toLowerCase();
       return fridgeNames.any(
           (fn) => fn.contains(riName) || riName.contains(fn));
-    }).length;
+    }
+
+    final matched = requiredIngredients.where(isOwned).length;
+    final missing = requiredIngredients
+        .where((ri) => !isOwned(ri))
+        .map((ri) => ri.name)
+        .toList();
 
     final hasUrgent = recipe.ingredients.any((ri) {
       final riName = ri.name.toLowerCase();
@@ -66,6 +72,9 @@ final recommendedRecipesProvider = Provider<List<Recipe>>((ref) {
     return recipe.copyWith(
       matchRate: matchRate,
       hasUrgentIngredient: hasUrgent,
+      matchedCount: matched,
+      totalRequired: total,
+      missingIngredients: missing,
     );
   }).toList();
 

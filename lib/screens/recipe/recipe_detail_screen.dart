@@ -184,7 +184,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '${(recipe.matchRate * 100).round()}% 보유',
+                  recipe.totalRequired == 0
+                      ? '재료 정보 없음'
+                      : recipe.matchedCount >= recipe.totalRequired
+                          ? '재료 다 있어요!'
+                          : '${recipe.totalRequired}개 중 ${recipe.matchedCount}개 보유',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.secondary,
@@ -203,6 +207,36 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        if (recipe.missingIngredients.isNotEmpty) ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border:
+                  Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.shopping_cart_outlined,
+                    size: 18, color: AppColors.warning),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '부족한 재료: ${recipe.missingIngredients.join(', ')}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF8A6D00),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         const Text(
           '필수 재료',
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,

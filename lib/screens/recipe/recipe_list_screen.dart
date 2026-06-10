@@ -258,7 +258,12 @@ class _RecipeListCard extends StatelessWidget {
                       const Text('보유 재료 ',
                           style: TextStyle(
                               fontSize: 11, color: AppColors.textHint)),
-                      Expanded(child: MatchRateBar(rate: recipe.matchRate)),
+                      Expanded(
+                        child: MatchRateBar(
+                          matched: recipe.matchedCount,
+                          total: recipe.totalRequired,
+                        ),
+                      ),
                     ],
                   ),
                 ],
