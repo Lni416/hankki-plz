@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/util/ingredient_category_resolver.dart';
 import '../../core/util/ingredient_emoji.dart';
+import '../../core/util/ingredient_shelf_life.dart';
 import '../../models/ingredient.dart';
 import '../../providers/fridge_provider.dart';
 import '../../services/cloud_functions_service.dart';
@@ -240,7 +241,8 @@ class _CameraRecognitionScreenState
         category: category,
         quantity: 1,
         unit: '개',
-        expiryDate: DateTime.now().add(const Duration(days: 7)),
+        expiryDate: DateTime.now()
+            .add(Duration(days: shelfLifeDaysFor(name, category))),
         emoji: emojiForIngredient(name, category),
       ));
     }

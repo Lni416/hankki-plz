@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/util/ingredient_category_resolver.dart';
 import '../../core/util/ingredient_emoji.dart';
+import '../../core/util/ingredient_shelf_life.dart';
 import '../../models/ingredient.dart';
 
 class AddIngredientSheet extends StatefulWidget {
@@ -34,7 +35,16 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
   IngredientCategory? _selectedCategory;
   String _unit = '개';
   DateTime _expiryDate = DateTime.now().add(const Duration(days: 7));
+  bool _expiryManuallySet = false; // 사용자가 직접 고르면 자동 제안 중단
   List<String> _recentIngredients = [];
+
+  /// 이름 기반으로 일반적인 유통기한을 자동 제안 (직접 선택 전까지만)
+  void _suggestExpiry(String name) {
+    if (_expiryManuallySet || name.trim().isEmpty) return;
+    final category = _selectedCategory ?? categoryForIngredient(name);
+    _expiryDate =
+        DateTime.now().add(Duration(days: shelfLifeDaysFor(name, category)));
+  }
 
   @override
   void initState() {
@@ -149,6 +159,7 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
                   onPressed: () {
                     setState(() {
                       _nameCtrl.text = ingredient;
+                      _suggestExpiry(ingredient);
                     });
                   },
                   onDeleted: () => _removeRecentIngredient(ingredient),
@@ -182,6 +193,7 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
                       _nameCtrl.text = q.$1;
                       _selectedCategory = q.$3;
                       _unit = q.$4;
+                      _suggestExpiry(q.$1);
                     });
                   },
                   child: Container(
@@ -224,6 +236,7 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
               hintText: '재료 이름 직접 입력',
               prefixIcon: Icon(Icons.search),
             ),
+            onChanged: (v) => setState(() => _suggestExpiry(v)),
           ),
           const SizedBox(height: 12),
           Row(
@@ -283,7 +296,12 @@ class _AddIngredientSheetState extends State<AddIngredientSheet> {
                 firstDate: DateTime.now(),
                 lastDate: DateTime.now().add(const Duration(days: 365)),
               );
-              if (picked != null) setState(() => _expiryDate = picked);
+              if (picked != null) {
+                setState(() {
+                  _expiryDate = picked;
+                  _expiryManuallySet = true;
+                });
+              }
             },
             child: Container(
               padding: const EdgeInsets.all(14),

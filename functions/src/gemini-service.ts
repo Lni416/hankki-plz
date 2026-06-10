@@ -41,6 +41,51 @@ JSON 배열 외에 다른 텍스트는 포함하지 마세요.`;
   }
 }
 
+// ── 영수증 인식 ─────────────────────────────────────────────────────────────
+
+export interface ReceiptItem {
+  name: string;
+  quantity: number;
+  unit: string;
+}
+
+/**
+ * 영수증 사진에서 식재료 구매 품목을 추출해 정규화된 이름으로 반환
+ */
+export async function parseReceiptFromImage(
+  imageBase64: string,
+  mimeType: string = "image/jpeg"
+): Promise<ReceiptItem[]> {
+  const genAI = getGeminiClient();
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const imagePart: Part = {
+    inlineData: { data: imageBase64, mimeType },
+  };
+
+  const prompt = `이 영수증 사진에서 식재료 구매 품목만 추출하세요.
+
+규칙:
+1. 식재료만 포함 — 봉투, 휴지, 세제, 배달비, 할인 행 등 비식품은 제외
+2. 상품명을 일반 재료명으로 정규화: "서울우유 1L" → "우유", "CJ 행복한콩 두부 300g" → "두부", "농협 신선란 15구" → "달걀"
+3. 수량은 구매 수량 (알 수 없으면 1), 단위는 개/g/ml/팩/봉 중 적절한 것
+
+JSON 배열로만 반환:
+[{"name":"우유","quantity":1,"unit":"개"},{"name":"두부","quantity":2,"unit":"모"}]
+식재료가 없으면 빈 배열 []을 반환하세요. JSON 외 다른 텍스트는 포함하지 마세요.`;
+
+  const result = await model.generateContent([prompt, imagePart]);
+  const text = result.response.text().trim();
+
+  try {
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const parsed = JSON.parse(cleaned) as ReceiptItem[];
+    return parsed.filter((p) => p && typeof p.name === "string" && p.name.length > 0);
+  } catch {
+    return [];
+  }
+}
+
 // ── 학습 카드 생성 ─────────────────────────────────────────────────────────
 
 export interface LearnCardData {

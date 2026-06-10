@@ -8,12 +8,14 @@ import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/util/ingredient_category_resolver.dart';
 import '../../core/util/ingredient_emoji.dart';
+import '../../core/util/ingredient_shelf_life.dart';
 import '../../models/ingredient.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/fridge_provider.dart';
 import '../../services/cloud_functions_service.dart';
 import 'add_ingredient_sheet.dart';
 import 'camera_recognition_screen.dart';
+import 'receipt_review_sheet.dart';
 
 class FridgeScreen extends ConsumerWidget {
   const FridgeScreen({super.key});
@@ -186,6 +188,16 @@ class FridgeScreen extends ConsumerWidget {
                     onTap: () => Navigator.pop(ctx, _RecognizeSource.gallery),
                   ),
                 ),
+                const SizedBox(width: 12),
+                // 영수증: 장본 품목 일괄 등록 + 유통기한 자동 설정
+                Expanded(
+                  child: _SourceButton(
+                    icon: Icons.receipt_long_outlined,
+                    label: '영수증 스캔',
+                    badge: 'NEW',
+                    onTap: () => Navigator.pop(ctx, _RecognizeSource.receipt),
+                  ),
+                ),
               ],
             ),
           ],
@@ -203,17 +215,29 @@ class FridgeScreen extends ConsumerWidget {
       return;
     }
 
-    // 갤러리 또는 웹 카메라 → image_picker 사용
+    // 갤러리 / 웹 카메라 / 영수증 → image_picker 사용
     final picker = ImagePicker();
+    final ImageSource pickerSource;
+    if (source == _RecognizeSource.gallery) {
+      pickerSource = ImageSource.gallery;
+    } else if (source == _RecognizeSource.receipt) {
+      // 영수증: 모바일=카메라 촬영, 웹=파일 선택
+      pickerSource = kIsWeb ? ImageSource.gallery : ImageSource.camera;
+    } else {
+      pickerSource = ImageSource.camera; // 웹 카메라 촬영
+    }
     final xFile = await picker.pickImage(
-      source: source == _RecognizeSource.camera
-          ? ImageSource.camera
-          : ImageSource.gallery,
+      source: pickerSource,
       maxWidth: 1024,
       maxHeight: 1024,
       imageQuality: 85,
     );
     if (xFile == null || !context.mounted) return;
+
+    if (source == _RecognizeSource.receipt) {
+      await _analyzeReceipt(context, ref, xFile);
+      return;
+    }
 
     // Firebase 미설정 시 시뮬레이션
     final firebaseAvailable = ref.read(firebaseAvailableProvider);
@@ -224,25 +248,7 @@ class FridgeScreen extends ConsumerWidget {
 
     // Gemini Vision 인식
     if (!context.mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.primary),
-                SizedBox(height: 16),
-                Text('🤖 재료를 인식하고 있어요...'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    _showLoadingDialog(context, '🤖 재료를 인식하고 있어요...');
 
     try {
       final ingredients = await CloudFunctionsService.recognizeIngredients(
@@ -258,6 +264,86 @@ class FridgeScreen extends ConsumerWidget {
         SnackBar(content: Text('인식 실패: $e'), backgroundColor: AppColors.danger),
       );
     }
+  }
+
+  void _showLoadingDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: AppColors.primary),
+                const SizedBox(height: 16),
+                Text(message),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 영수증 사진 → Gemini 품목 추출 → 확인 시트 → 일괄 추가
+  Future<void> _analyzeReceipt(
+    BuildContext context,
+    WidgetRef ref,
+    XFile xFile,
+  ) async {
+    final firebaseAvailable = ref.read(firebaseAvailableProvider);
+
+    List<ReceiptItem> items;
+    if (!firebaseAvailable) {
+      // 시뮬레이션 모드
+      items = const [
+        ReceiptItem(name: '우유', quantity: 1, unit: '개'),
+        ReceiptItem(name: '달걀', quantity: 1, unit: '판'),
+        ReceiptItem(name: '두부', quantity: 2, unit: '모'),
+      ];
+    } else {
+      _showLoadingDialog(context, '🧾 영수증을 읽고 있어요...');
+      try {
+        final bytes = await xFile.readAsBytes();
+        items = await CloudFunctionsService.parseReceipt(bytes);
+        if (!context.mounted) return;
+        Navigator.pop(context); // 로딩 닫기
+      } catch (e) {
+        if (!context.mounted) return;
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('영수증 인식 실패: $e'),
+              backgroundColor: AppColors.danger),
+        );
+        return;
+      }
+    }
+
+    if (!context.mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ReceiptReviewSheet(
+        items: items,
+        onConfirm: (ingredients) {
+          final notifier = ref.read(fridgeProvider.notifier);
+          for (final ingredient in ingredients) {
+            notifier.addIngredient(ingredient);
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${ingredients.length}개 재료를 냉장고에 추가했어요 🧊'),
+              backgroundColor: AppColors.secondary,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _showRecognizedIngredients(
@@ -360,7 +446,8 @@ class FridgeScreen extends ConsumerWidget {
                             quantity: 1,
                             unit: '개',
                             expiryDate: DateTime.now().add(
-                              const Duration(days: 7),
+                              Duration(
+                                  days: shelfLifeDaysFor(name, category)),
                             ),
                             emoji: emojiForIngredient(name, category),
                           ),
@@ -384,7 +471,7 @@ class FridgeScreen extends ConsumerWidget {
   }
 }
 
-enum _RecognizeSource { camera, gallery }
+enum _RecognizeSource { camera, gallery, receipt }
 
 class _SourceButton extends StatelessWidget {
   final IconData icon;

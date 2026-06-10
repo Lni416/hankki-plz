@@ -1,6 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_functions/cloud_functions.dart';
+
+/// 영수증에서 인식된 구매 품목
+class ReceiptItem {
+  final String name;
+  final double quantity;
+  final String unit;
+
+  const ReceiptItem({
+    required this.name,
+    required this.quantity,
+    required this.unit,
+  });
+}
 
 /// Firebase Cloud Functions 호출 서비스
 /// Firebase 미설정 시에는 목 응답 반환
@@ -27,6 +41,38 @@ class CloudFunctionsService {
       return ingredients;
     } on FirebaseFunctionsException catch (e) {
       throw Exception('재료 인식 실패: ${e.message}');
+    }
+  }
+
+  // ── 영수증 인식 ───────────────────────────────────────────────────────────
+
+  /// 영수증 이미지(bytes)를 Gemini Vision으로 분석해 구매 식재료 목록 반환.
+  /// File 대신 bytes를 받아 웹/모바일 모두 지원 (XFile.readAsBytes 사용).
+  static Future<List<ReceiptItem>> parseReceipt(
+    Uint8List imageBytes, {
+    String mimeType = 'image/jpeg',
+  }) async {
+    try {
+      final base64Image = base64Encode(imageBytes);
+
+      final callable = _functions.httpsCallable('parseReceipt');
+      final result = await callable.call<Map<String, dynamic>>({
+        'imageBase64': base64Image,
+        'mimeType': mimeType,
+      });
+
+      final items = (result.data['items'] as List? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((m) => ReceiptItem(
+                name: m['name'] as String? ?? '',
+                quantity: (m['quantity'] as num?)?.toDouble() ?? 1,
+                unit: m['unit'] as String? ?? '개',
+              ))
+          .where((i) => i.name.isNotEmpty)
+          .toList();
+      return items;
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception('영수증 인식 실패: ${e.message}');
     }
   }
 

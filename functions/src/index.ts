@@ -3,7 +3,11 @@ import * as functions from "firebase-functions/v2";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { recognizeIngredientsFromImage, generateLessonCards } from "./gemini-service";
+import {
+  recognizeIngredientsFromImage,
+  parseReceiptFromImage,
+  generateLessonCards,
+} from "./gemini-service";
 import {
   fetchAllRecipes,
   fetchRecommendedHistory,
@@ -35,6 +39,25 @@ export const recognizeIngredients = onCall(
       mimeType ?? "image/jpeg"
     );
     return { ingredients };
+  }
+);
+
+// ── 영수증 인식 ─────────────────────────────────────────────────────────────
+
+export const parseReceipt = onCall(
+  { region: REGION, secrets: ["GEMINI_API_KEY"] },
+  async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "로그인이 필요합니다");
+
+    const { imageBase64, mimeType } = request.data as {
+      imageBase64: string;
+      mimeType?: string;
+    };
+
+    if (!imageBase64) throw new HttpsError("invalid-argument", "이미지 데이터가 없습니다");
+
+    const items = await parseReceiptFromImage(imageBase64, mimeType ?? "image/jpeg");
+    return { items };
   }
 );
 
